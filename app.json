@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "KASH",
+    "slug": "kash-finance-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#4CAF50"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#4CAF50"
+      }
+    },
+    "web": {
+      "bundler": "webpack"
+    }
+  }
+}
