@@ -15,9 +15,8 @@ export default function LoginScreen() {
     if (!email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
-    }
     try {
-      const res = await fetch(`${API_URL}/login`, {
+      const res = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: senha }),
@@ -32,6 +31,7 @@ export default function LoginScreen() {
       }
     } catch {
       Alert.alert('Erro', 'Erro ao conectar ao servidor');
+    }
     }
   };
 

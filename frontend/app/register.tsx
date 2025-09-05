@@ -42,13 +42,13 @@ export default function RegisterScreen() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/register`, {
+      const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, cpf, password }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.user && data.token) {
         Alert.alert('Sucesso', 'Cadastro realizado!', [
           { text: 'OK', onPress: () => router.push('/login') },
         ]);
