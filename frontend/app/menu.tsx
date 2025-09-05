@@ -1,10 +1,18 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function MenuScreen() {
   const router = useRouter();
+  const [name, setName] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setName(localStorage.getItem('userName') || '');
+    }
+  }, []);
 
   const handleSair = () => {
     // Aqui você pode limpar tokens, estados, etc, se necessário
@@ -14,6 +22,7 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.welcome}>Bem-vindo, {name}!</Text>
       <Text style={styles.title}>Menu</Text>
       <TouchableOpacity style={styles.item} onPress={() => router.push('/perfil')}>
         <MaterialIcons name="person" size={28} color="#8b5cf6" style={styles.icon} />
@@ -31,7 +40,6 @@ export default function MenuScreen() {
         <MaterialIcons name="history" size={28} color="#f59e42" style={styles.icon} />
         <Text style={styles.itemText}>Movimentações</Text>
       </TouchableOpacity>
-      {/* Removido o botão Sobre */}
       <TouchableOpacity style={[styles.item, styles.sair]} onPress={handleSair}>
         <MaterialIcons name="logout" size={28} color="#ef4444" style={styles.icon} />
         <Text style={[styles.itemText, { color: '#ef4444' }]}>Sair</Text>
@@ -39,8 +47,10 @@ export default function MenuScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60 },
+  welcome: { fontSize: 24, fontWeight: 'bold', color: '#228B22', marginBottom: 8 },
   title: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
   item: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 12, padding: 18, marginBottom: 16, width: '85%' },
   icon: { marginRight: 16 },

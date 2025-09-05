@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const API_URL = 'http://192.168.15.11:3001';
+const API_URL = 'http://localhost:3000';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -17,19 +17,16 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [strength, setStrength] = useState('Fraca');
 
-  const checkStrength = async (pwd: string) => {
+  const checkStrength = (pwd: string) => {
     setPassword(pwd);
-    try {
-      const res = await fetch(`${API_URL}/password-strength`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pwd }),
-      });
-      const data = await res.json();
-      setStrength(data.strength);
-    } catch {
-      setStrength('Fraca');
-    }
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 1) setStrength('Fraca');
+    else if (score === 2) setStrength('Média');
+    else setStrength('Forte');
   };
 
   const handleRegister = async () => {
@@ -49,7 +46,7 @@ export default function RegisterScreen() {
       });
       const data = await res.json();
       if (data.user && data.token) {
-        Alert.alert('Sucesso', 'Cadastro realizado!', [
+        Alert.alert('Sucesso', 'Cadastrado com sucesso!', [
           { text: 'OK', onPress: () => router.push('/login') },
         ]);
       } else {

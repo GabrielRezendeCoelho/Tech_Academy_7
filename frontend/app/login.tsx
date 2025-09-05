@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const API_URL = 'http://192.168.15.11:3001';
+const API_URL = 'http://localhost:3000';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -23,9 +23,10 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (data.token) {
-        Alert.alert('Sucesso', 'Login realizado!', [
-          { text: 'OK', onPress: () => router.push('/dashboard') },
-        ]);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userName', data.user.name);
+        }
+        router.replace('/menu');
       } else {
         Alert.alert('Erro', data.error || 'Erro ao fazer login');
       }
@@ -41,7 +42,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <Text style={styles.appName}>Kash</Text>
+        <Text style={styles.appName}>Login</Text>
         <FontAwesome name="money" size={64} color="#228B22" style={{ marginBottom: 24 }} />
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>

@@ -22,7 +22,6 @@ export default function DespesasScreen() {
   ]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Filtro por data
   const [filtroData, setFiltroData] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [filtrar, setFiltrar] = useState(false);
@@ -42,7 +41,6 @@ export default function DespesasScreen() {
     setModalVisible(false);
   };
 
-  // Filtro por data selecionada
   const despesasFiltradas = filtrar && filtroData
     ? despesas.filter((item) => item.data === filtroData.toISOString().slice(0, 10))
     : despesas;
