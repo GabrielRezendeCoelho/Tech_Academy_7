@@ -5,16 +5,21 @@ import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  // Saldo fixo de 300 reais
   const [saldo, setSaldo] = useState<number>(180);
   const [despesas, setDespesas] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+
 
   useEffect(() => {
-    // Simula busca de despesas do backend
+      if (typeof window !== 'undefined') {
+        setName(localStorage.getItem('userName') || '');
+      }
+    }, []);
+
+  useEffect(() => {
     async function fetchDespesas() {
       try {
-        // Exemplo: soma dos valores negativos do histórico
         const res = await fetch('http://192.168.15.11:3001/historico');
         const data = await res.json();
         const totalDespesas = data
@@ -35,7 +40,6 @@ export default function DashboardScreen() {
     porcentagem = (despesas / saldo) * 100;
   }
 
-  // Lógica de cor e alerta
   let corPorcentagem = '#22c55e';
   let textoAlerta = 'Situação saudável!';
   if (porcentagem >= 80) {
@@ -56,7 +60,8 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Botão de Menu */}
+      <Text style={styles.welcome}>Bem-vindo, {name}!</Text>
+
       <TouchableOpacity
         style={{
           position: 'absolute',
@@ -72,7 +77,6 @@ export default function DashboardScreen() {
         <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Menu</Text>
       </TouchableOpacity>
 
-      {/* Card de Saldo */}
       <View style={styles.saldoCard}>
         <View style={styles.iconCircle}>
           <MaterialIcons name="account-balance-wallet" size={48} color="#fff" />
@@ -105,6 +109,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40 },
+  welcome: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 24 },
   saldoCard: {
     backgroundColor: '#d1fae5',
     borderRadius: 18,

@@ -1,28 +1,19 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function MenuScreen() {
   const router = useRouter();
-  const [name, setName] = useState('');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setName(localStorage.getItem('userName') || '');
-    }
-  }, []);
 
   const handleSair = () => {
-    // Aqui você pode limpar tokens, estados, etc, se necessário
     Alert.alert('Sair', 'Você saiu do aplicativo.');
     router.push('/login');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcome}>Bem-vindo, {name}!</Text>
       <Text style={styles.title}>Menu</Text>
       <TouchableOpacity style={styles.item} onPress={() => router.push('/perfil')}>
         <MaterialIcons name="person" size={28} color="#8b5cf6" style={styles.icon} />

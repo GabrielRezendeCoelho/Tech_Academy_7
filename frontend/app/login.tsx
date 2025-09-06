@@ -15,25 +15,12 @@ export default function LoginScreen() {
     if (!email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
-    try {
-      const res = await fetch(`${API_URL}/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: senha }),
-      });
-      const data = await res.json();
-      if (data.token) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('userName', data.user.name);
-        }
-        router.replace('/menu');
-      } else {
-        Alert.alert('Erro', data.error || 'Erro ao fazer login');
-      }
-    } catch {
-      Alert.alert('Erro', 'Erro ao conectar ao servidor');
     }
+    const nomeUsuario = email.split('@')[0]; 
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userName', nomeUsuario);
     }
+    router.push('/dashboard');
   };
 
   return (
