@@ -16,6 +16,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [strength, setStrength] = useState('Fraca');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const checkStrength = (pwd: string) => {
     setPassword(pwd);
@@ -30,12 +31,13 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    setErrorMsg('');
     if (!name || !email || !cpf || !password || !confirm) {
-      Alert.alert('Erro', 'Preencha todos os campos');
+      setErrorMsg('Preencha todos os campos');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      setErrorMsg('As senhas não coincidem');
       return;
     }
     try {
@@ -45,15 +47,15 @@ export default function RegisterScreen() {
         body: JSON.stringify({ name, email, cpf, password }),
       });
       const data = await res.json();
-      if (data.user && data.token) {
-        Alert.alert('Sucesso', 'Cadastrado com sucesso!', [
-          { text: 'OK', onPress: () => router.push('/login') },
-        ]);
+      if (res.ok && data.user) {
+        setTimeout(() => {
+          router.replace('/login');
+        }, 300);
       } else {
-        Alert.alert('Erro', data.error || 'Erro ao cadastrar');
+        setErrorMsg(data.error || 'Erro ao cadastrar');
       }
-    } catch {
-      Alert.alert('Erro', 'Erro ao conectar ao servidor');
+    } catch (e) {
+      setErrorMsg('Erro ao conectar ao servidor');
     }
   };
 
@@ -89,7 +91,6 @@ export default function RegisterScreen() {
               <FontAwesome name={showCpf ? "eye-slash" : "eye"} size={20} color="#6B7280" />
             </TouchableOpacity>
           </View>
-          {/* Barra de força da senha */}
           <View style={{ height: 4, backgroundColor: '#E5E5E5', borderRadius: 2, marginBottom: 8 }}>
             <View
               style={{
@@ -130,6 +131,9 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {errorMsg ? (
+          <Text style={{ color: '#ef4444', marginBottom: 12, textAlign: 'center' }}>{errorMsg}</Text>
+        ) : null}
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Cadastrar</Text>
         </TouchableOpacity>
