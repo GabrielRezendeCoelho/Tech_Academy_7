@@ -1,44 +1,205 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAppAlert } from './components/AppAlert';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
-type Despesa = {
-  id: string;
-  descricao: string;
-  valor: number;
-  data: string;
-};
+
 
 export default function DespesasScreen() {
+  const alert = useAppAlert();
   const router = useRouter();
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [dataDespesa, setDataDespesa] = useState('');
-  const [despesas, setDespesas] = useState<Despesa[]>([
-    { id: '1', descricao: 'Supermercado', valor: 150, data: '2025-08-29' },
-    { id: '2', descricao: 'Transporte', valor: 30, data: '2025-08-28' },
-  ]);
+  const [despesas, setDespesas] = useState<Array<{ id: string; descricao: string; valor: number; data: string }>>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
   const [filtroData, setFiltroData] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [filtrar, setFiltrar] = useState(false);
+  // Estados para edição
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editDescricao, setEditDescricao] = useState('');
+  const [editValor, setEditValor] = useState('');
+  const [editData, setEditData] = useState('');
 
-  const adicionarDespesa = () => {
+  // Função para abrir modal de edição
+  const openEditModal = (item: { id: string; descricao: string; valor: number; data: string }) => {
+    setEditId(item.id);
+    setEditDescricao(item.descricao);
+    setEditValor(item.valor.toString());
+    setEditData(item.data);
+    setEditModalVisible(true);
+  };
+
+  // Função para editar despesa
+  const handleEditDespesa = async () => {
+    if (!editId || !editDescricao || !editValor || !editData) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) return;
+    try {
+      const res = await fetch(`http://localhost:3000/saldos/${editId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ valor: -Math.abs(Number(editValor)), origem: editDescricao, data: editData })
+      });
+      if (!res.ok) {
+        Alert.alert('Erro', 'Erro ao editar despesa');
+        return;
+      }
+      // Atualiza lista após sucesso
+      fetch('http://localhost:3000/saldos/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
+              id: String(item.id),
+              descricao: item.origem || 'Despesa',
+              valor: Math.abs(item.valor),
+              data: new Date(item.data).toISOString().slice(0, 10)
+            })).reverse());
+          } else {
+            setDespesas([]);
+          }
+        });
+      setEditModalVisible(false);
+      setEditId(null);
+      setEditDescricao('');
+      setEditValor('');
+      setEditData('');
+      alert.show('Despesa editada com sucesso!');
+    } catch {
+      Alert.alert('Erro', 'Erro ao conectar com o servidor');
+    }
+  };
+
+  // Função para deletar despesa
+  const handleDeleteDespesa = async (id: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) return;
+    try {
+      const res = await fetch(`http://localhost:3000/saldos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        Alert.alert('Erro', 'Erro ao deletar despesa');
+        return;
+      }
+      // Atualiza lista após sucesso
+      fetch('http://localhost:3000/saldos/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
+              id: String(item.id),
+              descricao: item.origem || 'Despesa',
+              valor: Math.abs(item.valor),
+              data: new Date(item.data).toISOString().slice(0, 10)
+            })).reverse());
+          } else {
+            setDespesas([]);
+          }
+        });
+      alert.show('Despesa deletada com sucesso!');
+    } catch {
+      Alert.alert('Erro', 'Erro ao conectar com o servidor');
+    }
+  };
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) return;
+    fetch('http://localhost:3000/saldos/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
+            id: String(item.id),
+            descricao: item.origem || 'Despesa',
+            valor: Math.abs(item.valor),
+            data: new Date(item.data).toISOString().slice(0, 10)
+          })).reverse());
+        } else {
+          setDespesas([]);
+        }
+      })
+      .catch(() => setDespesas([]));
+  }, []);
+
+  const adicionarDespesa = async () => {
     if (!descricao || !valor || !dataDespesa) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
-    setDespesas([
-      { id: Math.random().toString(), descricao, valor: Number(valor), data: dataDespesa },
-      ...despesas,
-    ]);
-    setDescricao('');
-    setValor('');
-    setDataDespesa('');
-    setModalVisible(false);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) {
+      Alert.alert('Erro', 'Usuário não autenticado');
+      return;
+    }
+    let userId;
+    try {
+      // Decodifica o token para pegar o userId
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.id;
+    } catch {
+      Alert.alert('Erro', 'Token inválido');
+      return;
+    }
+    // Categoria padrão (ex: 1)
+    const categoriaId = 1;
+    const valorNegativo = -Math.abs(Number(valor));
+    try {
+      const res = await fetch('http://localhost:3000/saldos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ valor: valorNegativo, userId, categoriaId, data: dataDespesa, origem: descricao })
+      });
+      if (!res.ok) {
+        Alert.alert('Erro', 'Erro ao registrar despesa no servidor');
+        return;
+      }
+      // Atualiza lista após sucesso
+      fetch('http://localhost:3000/saldos/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
+              id: String(item.id),
+              descricao: item.origem || 'Despesa',
+              valor: Math.abs(item.valor),
+              data: new Date(item.data).toISOString().slice(0, 10)
+            })).reverse());
+          } else {
+            setDespesas([]);
+          }
+        })
+        .catch(() => setDespesas([]));
+  setDescricao('');
+  setValor('');
+  setDataDespesa('');
+  setModalVisible(false);
+  alert.show('Despesa adicionada com sucesso!');
+    } catch {
+      Alert.alert('Erro', 'Erro ao conectar com o servidor');
+    }
   };
 
   const despesasFiltradas = filtrar && filtroData
@@ -112,9 +273,51 @@ export default function DespesasScreen() {
                 <Text style={styles.despesaData}>{item.data}</Text>
               </View>
               <Text style={styles.despesaValor}>- R${item.valor.toFixed(2)}</Text>
+              <TouchableOpacity onPress={() => openEditModal(item)} style={{ marginLeft: 8 }}>
+                <MaterialIcons name="edit" size={20} color="#228B22" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDeleteDespesa(item.id)} style={{ marginLeft: 8 }}>
+                <MaterialIcons name="delete" size={20} color="#ef4444" />
+              </TouchableOpacity>
             </View>
           )}
         />
+
+        {/* Modal para editar despesa */}
+        <Modal visible={editModalVisible} transparent animationType="slide">
+          <View style={styles.modalBg}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Editar Despesa</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Descrição"
+                value={editDescricao}
+                onChangeText={setEditDescricao}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Valor"
+                keyboardType="numeric"
+                value={editValor}
+                onChangeText={setEditValor}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Data (AAAA-MM-DD)"
+                value={editData}
+                onChangeText={setEditData}
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+                <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#22c55e' }]} onPress={handleEditDespesa}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Salvar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#ef4444' }]} onPress={() => setEditModalVisible(false)}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+  </Modal>
 
         {/* Modal para adicionar despesa */}
         <Modal visible={modalVisible} transparent animationType="slide">
@@ -169,7 +372,7 @@ export default function DespesasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60 },
+  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
   back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
   title: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
@@ -193,14 +396,13 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 16, color: '#374151' },
   button: {
-    backgroundColor: '#228B22', borderRadius: 16, width: '85%', height: 48,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+  backgroundColor: '#22c55e', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  buttonText: { fontSize: 20, color: '#fff' },
   subTitle: { fontSize: 20, fontWeight: '700', color: '#222', alignSelf: 'flex-start', marginLeft: '8%', marginBottom: 8 },
   despesaItem: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6',
-    borderRadius: 12, padding: 16, marginBottom: 12, width: '85%',
+  flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6',
+  borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 10, width: '100%', minHeight: 56, alignSelf: 'center',
   },
   icon: { marginRight: 16 },
   despesaDescricao: { fontSize: 18, fontWeight: '600', color: '#222' },

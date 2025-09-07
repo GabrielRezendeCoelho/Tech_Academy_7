@@ -14,6 +14,12 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+        style={{ position: 'absolute', top: 30, left: 30, zIndex: 2, backgroundColor: '#f3f4f6', borderRadius: 8, padding: 10 }}
+        onPress={() => router.push('/dashboard')}
+      >
+        <MaterialIcons name="arrow-back" size={28} color="#228B22" />
+      </TouchableOpacity>
       <Text style={styles.title}>Menu</Text>
       <TouchableOpacity style={styles.item} onPress={() => router.push('/perfil')}>
         <MaterialIcons name="person" size={28} color="#8b5cf6" style={styles.icon} />

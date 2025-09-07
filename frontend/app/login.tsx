@@ -16,11 +16,26 @@ export default function LoginScreen() {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
-    const nomeUsuario = email.split('@')[0]; 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('userName', nomeUsuario);
+    try {
+      const response = await fetch('http://localhost:3000/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: senha })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        Alert.alert('Erro', data.error || 'Erro ao fazer login');
+        return;
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userToken', data.token);
+      }
+      router.push('/dashboard');
+    } catch (err) {
+      Alert.alert('Erro', 'Erro ao conectar com o servidor');
     }
-    router.push('/dashboard');
   };
 
   return (

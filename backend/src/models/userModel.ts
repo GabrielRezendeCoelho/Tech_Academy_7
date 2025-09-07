@@ -23,6 +23,7 @@ User.init({
   email: {
     type: DataTypes.STRING(100),
     allowNull: false,
+    unique: true,
   },
   password: {
     type: DataTypes.STRING(100),
@@ -31,6 +32,7 @@ User.init({
   cpf: {
     type: DataTypes.STRING(11),
     allowNull: false,
+    unique: true,
   },
 }, {
   sequelize,

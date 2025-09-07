@@ -1,38 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
-type HistoricoItem = {
+type Movimentacao = {
   id: string;
-  tipo: string;
   valor: number;
+  origem: string;
   data: string;
-  icone: string;
-  cor: string;
+  dataFormatada: string;
 };
-
-const historicoInicial: HistoricoItem[] = [
-  { id: '1', tipo: 'Depósito', valor: 500, icone: 'arrow-upward', cor: '#22c55e', data: '2023-08-01' },
-  { id: '2', tipo: 'Supermercado', valor: -150, icone: 'arrow-downward', cor: '#ef4444', data: '2023-08-02' },
-  { id: '3', tipo: 'Transporte', valor: -30, icone: 'directions-bus', cor: '#f59e42', data: '2023-08-03' },
-  { id: '4', tipo: 'Depósito', valor: 2000, icone: 'arrow-upward', cor: '#22c55e', data: '2023-08-04' },
-];
 
 export default function HistoricoScreen() {
   const router = useRouter();
-  const [historico, setHistorico] = useState<HistoricoItem[]>(historicoInicial);
-
-  // Filtro por data
+  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [filtroData, setFiltroData] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [filtrar, setFiltrar] = useState(false);
 
-  // Filtro por data selecionada
-  const historicoFiltrado = filtrar && filtroData
-    ? historico.filter((item) => item.data === filtroData.toISOString().slice(0, 10))
-    : historico;
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) return;
+    fetch('http://localhost:3000/saldos/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Ordena por data decrescente
+          const ordenado = data.slice().sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+          setMovimentacoes(ordenado.map((item: any) => ({
+            id: String(item.id),
+            valor: item.valor,
+            origem: item.origem || (item.valor > 0 ? 'Depósito' : 'Despesa'),
+            data: new Date(item.data).toISOString().slice(0, 10),
+            dataFormatada: new Date(item.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+          })));
+        } else {
+          setMovimentacoes([]);
+        }
+      })
+      .catch(() => setMovimentacoes([]));
+  }, []);
+
+  const movimentacoesFiltradas = filtrar && filtroData
+    ? movimentacoes.filter((item) => item.data === filtroData.toISOString().slice(0, 10))
+    : movimentacoes;
 
   return (
     <View style={styles.container}>
@@ -79,23 +93,28 @@ export default function HistoricoScreen() {
 
       <Text style={styles.subTitle}>Movimentações recentes</Text>
       <FlatList
-        data={historicoFiltrado}
+        data={movimentacoesFiltradas}
         keyExtractor={item => item.id}
         style={{ width: '100%' }}
         contentContainerStyle={{ alignItems: 'center', paddingBottom: 24 }}
         ListEmptyComponent={<Text style={{ color: '#6b7280', marginTop: 12 }}>Nenhuma movimentação encontrada.</Text>}
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <MaterialIcons name={item.icone as any} size={28} color={item.cor} style={styles.icon} />
+          <View style={styles.movItem}>
+            <MaterialIcons
+              name={item.valor > 0 ? 'arrow-upward' : 'arrow-downward'}
+              size={24}
+              color={item.valor > 0 ? '#22c55e' : '#ef4444'}
+              style={styles.icon}
+            />
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemText}>{item.tipo}</Text>
-              <Text style={styles.dataText}>{item.data}</Text>
+              <Text style={styles.movDescricao}>{item.origem}</Text>
+              <Text style={styles.movData}>{item.dataFormatada}</Text>
             </View>
             <Text style={[
-              styles.valor,
+              styles.movValor,
               { color: item.valor > 0 ? '#22c55e' : '#ef4444' }
             ]}>
-              {item.valor > 0 ? '+ ' : '- '}R${Math.abs(item.valor)}
+              {item.valor > 0 ? '+ ' : '- '}R${Math.abs(item.valor).toFixed(2)}
             </Text>
           </View>
         )}
@@ -105,7 +124,7 @@ export default function HistoricoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60 },
+  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
   back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
   title: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
@@ -119,12 +138,13 @@ const styles = StyleSheet.create({
   },
   filtrarBtnText: { marginLeft: 6, fontSize: 15, color: '#228B22', fontWeight: '600' },
   subTitle: { fontSize: 20, fontWeight: '700', color: '#222', alignSelf: 'flex-start', marginLeft: '8%', marginBottom: 8 },
-  item: {
+  movItem: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6',
-    borderRadius: 12, padding: 16, marginBottom: 12, width: '85%',
+    borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 10, width: '100%', minHeight: 56, alignSelf: 'center',
   },
+  // ...existing code...
   icon: { marginRight: 16 },
-  itemText: { fontSize: 18, fontWeight: '600', color: '#222' },
-  dataText: { fontSize: 13, color: '#6B7280' },
-  valor: { fontSize: 18, fontWeight: '700', minWidth: 100, textAlign: 'right' },
+  movDescricao: { fontSize: 18, fontWeight: '600', color: '#222' },
+  movData: { fontSize: 13, color: '#6B7280' },
+  movValor: { fontSize: 18, fontWeight: '700', minWidth: 100, textAlign: 'right' },
 });

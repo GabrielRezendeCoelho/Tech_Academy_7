@@ -3,51 +3,66 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+
 export default function DashboardScreen() {
   const router = useRouter();
-  const [saldo, setSaldo] = useState<number>(180);
-  const [despesas, setDespesas] = useState<number | null>(null);
+  const [saldo, setSaldo] = useState<number>(0);
+  const [despesas, setDespesas] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
 
-
   useEffect(() => {
-      if (typeof window !== 'undefined') {
-        setName(localStorage.getItem('userName') || '');
-      }
-    }, []);
-
-  useEffect(() => {
-    async function fetchDespesas() {
-      try {
-        const res = await fetch('http://192.168.15.11:3001/historico');
-        const data = await res.json();
-        const totalDespesas = data
-          .filter((item: any) => item.valor < 0)
-          .reduce((acc: number, item: any) => acc + Math.abs(item.valor), 0);
-        setDespesas(totalDespesas);
-        setLoading(false);
-      } catch {
-        setDespesas(0);
-        setLoading(false);
-      }
+    if (typeof window !== 'undefined') {
+      setName(localStorage.getItem('userName') || '');
     }
-    fetchDespesas();
   }, []);
 
-  let porcentagem = 0;
-  if (saldo !== null && despesas !== null && saldo > 0) {
-    porcentagem = (despesas / saldo) * 100;
-  }
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    fetch('http://localhost:3000/saldos/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const totalSaldo = data.reduce((acc: number, item: any) => acc + item.valor, 0);
+          const totalDespesas = data.filter((item: any) => item.valor < 0).reduce((acc: number, item: any) => acc + Math.abs(item.valor), 0);
+          setSaldo(totalSaldo);
+          setDespesas(totalDespesas);
+        } else {
+          setSaldo(0);
+          setDespesas(0);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setSaldo(0);
+        setDespesas(0);
+        setLoading(false);
+      });
+  }, []);
 
+
+  let porcentagem = 0;
   let corPorcentagem = '#22c55e';
   let textoAlerta = 'Situação saudável!';
-  if (porcentagem >= 80) {
-    corPorcentagem = '#ef4444';
-    textoAlerta = 'Atenção! Suas despesas estão muito altas!';
-  } else if (porcentagem >= 50) {
-    corPorcentagem = '#facc15';
-    textoAlerta = 'Aviso: Suas despesas estão aumentando.';
+  if (saldo < 0) {
+    corPorcentagem = '#b91c1c';
+    textoAlerta = 'Risco extremo! Seu saldo está negativo!';
+    porcentagem = 100;
+  } else if (saldo !== null && despesas !== null && saldo > 0) {
+    porcentagem = (despesas / saldo) * 100;
+    if (porcentagem >= 80) {
+      corPorcentagem = '#ef4444';
+      textoAlerta = 'Atenção! Suas despesas estão muito altas!';
+    } else if (porcentagem >= 50) {
+      corPorcentagem = '#facc15';
+      textoAlerta = 'Aviso: Suas despesas estão aumentando.';
+    }
   }
 
   if (loading) {
@@ -60,13 +75,13 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcome}>Bem-vindo, {name}!</Text>
+  <Text style={styles.welcome}>Bem-vindo, {name || 'usuário'}!</Text>
 
       <TouchableOpacity
         style={{
           position: 'absolute',
           top: 40,
-          right: 30,
+          left: 20,
           backgroundColor: '#f3f4f6',
           borderRadius: 8,
           padding: 10,
@@ -74,7 +89,7 @@ export default function DashboardScreen() {
         }}
         onPress={() => router.push('/menu')}
       >
-        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Menu</Text>
+        <MaterialIcons name="menu" size={28} color="#222" />
       </TouchableOpacity>
 
       <View style={styles.saldoCard}>
