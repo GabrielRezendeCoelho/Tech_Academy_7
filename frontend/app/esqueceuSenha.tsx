@@ -13,7 +13,7 @@ export default function EsqueceuSenhaScreen() {
 	const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
 	const router = useRouter();
 
-	const API_URL = 'http://192.168.0.100:3000'; 
+	const API_URL = 'http://localhost:3000';
 
 	const handleTrocarSenha = async () => {
 		if (!email || !senha || !confirmarSenha) {
@@ -24,26 +24,29 @@ export default function EsqueceuSenhaScreen() {
 			Alert.alert('Erro', 'As senhas não coincidem');
 			return;
 		}
-		try {
-			const response = await fetch(`${API_URL}/users/reset-password`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, novaSenha: senha })
-			});
-			const data = await response.json();
-			if (!response.ok) {
-				Alert.alert('Erro', data.error || 'Erro ao redefinir senha');
-				return;
-			}
-			Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
-				{
-					text: 'OK',
-					onPress: () => router.push('/login')
+			try {
+				const response = await fetch(`${API_URL}/users/reset-password`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email, novaSenha: senha })
+				});
+				let data = null;
+				try {
+					data = await response.json();
+				} catch (e) {
+					throw new Error('Resposta inesperada do servidor');
 				}
-			]);
-		} catch (err) {
-			Alert.alert('Erro', 'Erro ao conectar com o servidor');
-		}
+				if (!response.ok) {
+					Alert.alert('Erro', data?.error || 'Erro ao redefinir senha');
+					return;
+				}
+						Alert.alert('Sucesso', 'Senha alterada com sucesso!');
+						setTimeout(() => {
+							router.push('/login');
+						}, 1000);
+			} catch (err: any) {
+				Alert.alert('Erro', err.message || 'Erro ao conectar com o servidor');
+			}
 	};
 
 	return (
