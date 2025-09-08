@@ -1,3 +1,19 @@
+// Reset de senha via email (sem token)
+export const resetPasswordByEmail = async (req: Request, res: Response) => {
+  const { email, novaSenha } = req.body;
+  if (!email || !novaSenha) {
+    return res.status(400).json({ error: 'E-mail e nova senha são obrigatórios.' });
+  }
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+    const hashedPassword = await bcrypt.hash(novaSenha, 10);
+    await user.update({ password: hashedPassword });
+    res.json({ message: 'Senha redefinida com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao redefinir senha', details: err });
+  }
+};
 
 import bcrypt from 'bcryptjs';
 // Deletar usuário autenticado, exigindo senha

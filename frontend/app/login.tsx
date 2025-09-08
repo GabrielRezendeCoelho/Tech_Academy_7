@@ -74,7 +74,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/esqueceuSenha')}>
           <Text style={styles.forgot}>Esqueceu a senha?</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -86,9 +86,6 @@ export default function LoginScreen() {
             <Text style={styles.signupLink}>Cadastre-se</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/dashboard')}>
-          <Text style={styles.menuButtonText}>Ir para Menu</Text>
-        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
