@@ -3,6 +3,8 @@ import { useAppAlert } from './components/AppAlert';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, FlatList } from 'react-native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { API_BASE } from '../config/api';
+import { storageGet, USER_TOKEN_KEY } from '../utils/storage';
 
 type SaldoHistorico = {
   id: string;
@@ -35,10 +37,10 @@ export default function SaldoScreen() {
   // Função para editar saldo
   const handleEditSaldo = async () => {
     if (!editId || !editValor || !editOrigem) return;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/saldos/${editId}`, {
+  const res = await fetch(`${API_BASE}/saldos/${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +53,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza histórico
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -79,10 +81,10 @@ export default function SaldoScreen() {
 
   // Função para deletar saldo
   const handleDeleteSaldo = async (id: string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/saldos/${id}`, {
+  const res = await fetch(`${API_BASE}/saldos/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -91,7 +93,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza histórico
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -114,33 +116,33 @@ export default function SaldoScreen() {
   };
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    if (!token) return;
-    fetch('http://localhost:3000/saldos/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Soma todos os lançamentos para saldo total
-          const total = data.reduce((acc, item) => acc + item.valor, 0);
-          setSaldo(total);
-          // Monta histórico real
-          setHistorico(data.filter((item: any) => item.valor > 0).map((item: any) => ({
-            id: String(item.id),
-            valor: item.valor,
-            origem: item.origem || 'Saldo',
-            data: new Date(item.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-          })).reverse());
-        } else {
+    (async () => {
+      const token = await storageGet(USER_TOKEN_KEY);
+      if (!token) return;
+      fetch(`${API_BASE}/saldos/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            const total = data.reduce((acc, item) => acc + item.valor, 0);
+            setSaldo(total);
+            setHistorico(data.filter((item: any) => item.valor > 0).map((item: any) => ({
+              id: String(item.id),
+              valor: item.valor,
+              origem: item.origem || 'Saldo',
+              data: new Date(item.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+            })).reverse());
+          } else {
+            setSaldo(0);
+            setHistorico([]);
+          }
+        })
+        .catch(() => {
           setSaldo(0);
           setHistorico([]);
-        }
-      })
-      .catch(() => {
-        setSaldo(0);
-        setHistorico([]);
-      });
+        });
+    })();
   }, []);
 
   const handleColocarSaldo = async () => {
@@ -149,7 +151,7 @@ export default function SaldoScreen() {
       Alert.alert('Erro', 'Preencha o valor e a origem');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
@@ -166,7 +168,7 @@ export default function SaldoScreen() {
     // Categoria padrão (ex: 1)
     const categoriaId = 1;
     try {
-      const res = await fetch('http://localhost:3000/saldos', {
+  const res = await fetch(`${API_BASE}/saldos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +181,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza saldo e histórico após salvar
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -216,7 +218,7 @@ export default function SaldoScreen() {
       <TouchableOpacity style={styles.back} onPress={() => router.back()}>
         <FontAwesome name="arrow-left" size={24} color="#222" />
       </TouchableOpacity>
-      <Text style={styles.title}>Meu Saldo</Text>
+  <Text style={styles.title}>Meu Saldo</Text>
       <View style={styles.circle}>
         <FontAwesome name="dollar" size={48} color="#fff" />
       </View>
@@ -324,7 +326,7 @@ export default function SaldoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
   back: { position: 'absolute', left: 30, top: 60 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
   circle: { backgroundColor: '#22c55e', width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   saldo: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
   button: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center' },
@@ -338,7 +340,7 @@ const styles = StyleSheet.create({
   historicoData: { fontSize: 12, color: '#6B7280' },
   historicoValor: { fontSize: 18, fontWeight: '700', color: '#22c55e', minWidth: 100, textAlign: 'right' },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '85%', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxWidth: 480, alignItems: 'center', alignSelf: 'center' },
   modalTitle: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
   input: { width: '100%', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
   modalBtn: { flex: 1, marginHorizontal: 4, borderRadius: 8, padding: 12, alignItems: 'center' },

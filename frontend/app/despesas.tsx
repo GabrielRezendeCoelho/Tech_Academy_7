@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppAlert } from './components/AppAlert';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { API_BASE } from '../config/api';
+import { storageGet, USER_TOKEN_KEY } from '../utils/storage';
 
 
 
@@ -38,10 +40,10 @@ export default function DespesasScreen() {
   // Função para editar despesa
   const handleEditDespesa = async () => {
     if (!editId || !editDescricao || !editValor || !editData) return;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/saldos/${editId}`, {
+  const res = await fetch(`${API_BASE}/saldos/${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +56,7 @@ export default function DespesasScreen() {
         return;
       }
       // Atualiza lista após sucesso
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -83,10 +85,10 @@ export default function DespesasScreen() {
 
   // Função para deletar despesa
   const handleDeleteDespesa = async (id: string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/saldos/${id}`, {
+  const res = await fetch(`${API_BASE}/saldos/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -95,7 +97,7 @@ export default function DespesasScreen() {
         return;
       }
       // Atualiza lista após sucesso
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -118,25 +120,27 @@ export default function DespesasScreen() {
   };
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    if (!token) return;
-    fetch('http://localhost:3000/saldos/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
-            id: String(item.id),
-            descricao: item.origem || 'Despesa',
-            valor: Math.abs(item.valor),
-            data: new Date(item.data).toISOString().slice(0, 10)
-          })).reverse());
-        } else {
-          setDespesas([]);
-        }
+    (async () => {
+      const token = await storageGet(USER_TOKEN_KEY);
+      if (!token) return;
+      fetch(`${API_BASE}/saldos/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       })
-      .catch(() => setDespesas([]));
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDespesas(data.filter((item: any) => item.valor < 0).map((item: any) => ({
+              id: String(item.id),
+              descricao: item.origem || 'Despesa',
+              valor: Math.abs(item.valor),
+              data: new Date(item.data).toISOString().slice(0, 10)
+            })).reverse());
+          } else {
+            setDespesas([]);
+          }
+        })
+        .catch(() => setDespesas([]));
+    })();
   }, []);
 
   const adicionarDespesa = async () => {
@@ -144,7 +148,7 @@ export default function DespesasScreen() {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
@@ -162,7 +166,7 @@ export default function DespesasScreen() {
     const categoriaId = 1;
     const valorNegativo = -Math.abs(Number(valor));
     try {
-      const res = await fetch('http://localhost:3000/saldos', {
+  const res = await fetch(`${API_BASE}/saldos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +179,7 @@ export default function DespesasScreen() {
         return;
       }
       // Atualiza lista após sucesso
-      fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -215,7 +219,7 @@ export default function DespesasScreen() {
         <TouchableOpacity style={styles.back} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={28} color="#222" />
         </TouchableOpacity>
-        <Text style={styles.title}>Despesas</Text>
+  <Text style={styles.title}>Despesas</Text>
 
         {/* Botão Filtrar */}
         <View style={styles.filtroRow}>
@@ -374,7 +378,7 @@ export default function DespesasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
   back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
-  title: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
+  title: { fontSize: 32, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
   filtrarBtn: {
     flexDirection: 'row',
@@ -409,7 +413,7 @@ const styles = StyleSheet.create({
   despesaData: { fontSize: 13, color: '#6B7280' },
   despesaValor: { fontSize: 18, fontWeight: '700', color: '#ef4444', minWidth: 100, textAlign: 'right' },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '85%', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxWidth: 480, alignItems: 'center', alignSelf: 'center' },
   modalTitle: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
   modalBtn: { flex: 1, marginHorizontal: 4, borderRadius: 8, padding: 12, alignItems: 'center' },
 });

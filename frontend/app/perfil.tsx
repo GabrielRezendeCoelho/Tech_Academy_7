@@ -3,6 +3,8 @@ import { useAppAlert } from './components/AppAlert';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, TextInput, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { API_BASE } from '../config/api';
+import { storageGet, storageSet, storageClear, USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
 
 export default function PerfilScreen() {
   const alert = useAppAlert();
@@ -11,11 +13,18 @@ export default function PerfilScreen() {
   const [email, setEmail] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setNome(localStorage.getItem('userName') || '');
-      setEmail(localStorage.getItem('userEmail') || '');
-    }
+    (async () => {
+      const data = await storageMultiFetch();
+      if (data.name) setNome(data.name);
+      if (data.email) setEmail(data.email);
+    })();
   }, []);
+
+  async function storageMultiFetch() {
+    const name = await storageGet(USER_NAME_KEY);
+    const email = await storageGet(USER_EMAIL_KEY);
+    return { name, email };
+  }
   const [modalVisible, setModalVisible] = useState(false);
   const [modalEmailVisible, setModalEmailVisible] = useState(false);
   const [senhaEmail, setSenhaEmail] = useState('');
@@ -37,13 +46,13 @@ export default function PerfilScreen() {
       setErroDelete('Digite sua senha');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       setErroDelete('Usuário não autenticado');
       return;
     }
     try {
-      const res = await fetch('http://localhost:3000/users/delete', {
+  const res = await fetch(`${API_BASE}/users/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -57,9 +66,7 @@ export default function PerfilScreen() {
         return;
       }
       // Limpa localStorage e redireciona para login
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-      }
+      await storageClear();
       setModalDeleteVisible(false);
       setSenhaDelete('');
       setErroDelete('');
@@ -80,13 +87,13 @@ export default function PerfilScreen() {
       setErroEmail('Digite sua senha atual');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       setErroEmail('Usuário não autenticado');
       return;
     }
     try {
-      const res = await fetch('http://localhost:3000/users/update-email', {
+  const res = await fetch(`${API_BASE}/users/update-email`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -104,9 +111,7 @@ export default function PerfilScreen() {
         return;
       }
       setEmail(novoEmail.trim());
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userEmail', novoEmail.trim());
-      }
+      await storageSet(USER_EMAIL_KEY, novoEmail.trim());
       setModalEmailVisible(false);
       setNovoEmail('');
       setSenhaEmail('');
@@ -122,13 +127,13 @@ export default function PerfilScreen() {
       Alert.alert('Erro', 'Digite um nome válido');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
     }
     try {
-      const res = await fetch('http://localhost:3000/users/update', {
+  const res = await fetch(`${API_BASE}/users/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,9 +146,7 @@ export default function PerfilScreen() {
         return;
       }
       setNome(novoNome.trim());
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userName', novoNome.trim());
-      }
+      await storageSet(USER_NAME_KEY, novoNome.trim());
       setModalVisible(false);
       setNovoNome('');
   alert.show('Nome alterado com sucesso!');
@@ -158,13 +161,13 @@ export default function PerfilScreen() {
       setErroSenha('Preencha todos os campos');
       return;
     }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+  const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       setErroSenha('Usuário não autenticado');
       return;
     }
     try {
-      const res = await fetch('http://localhost:3000/users/update-password', {
+  const res = await fetch(`${API_BASE}/users/update-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +199,7 @@ export default function PerfilScreen() {
       <TouchableOpacity style={styles.back} onPress={() => router.back()}>
         <FontAwesome name="arrow-left" size={24} color="#222" />
       </TouchableOpacity>
-      <Text style={styles.title}>Perfil</Text>
+  <Text style={styles.title}>Perfil</Text>
       <Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} style={styles.avatar} />
 <View style={styles.infoBoxUser}>
   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -380,13 +383,13 @@ const styles = StyleSheet.create({
   nameUser: { fontSize: 18, color: '#222', fontWeight: '700' },
   emailUser: { fontSize: 16, color: '#666', fontWeight: '500' },
   back: { position: 'absolute', left: 30, top: 60 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
   avatar: { width: 90, height: 90, borderRadius: 45, marginBottom: 12 },
   info: { fontSize: 16, color: '#6b7280', marginBottom: 24 },
   button: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 16, width: '70%', alignItems: 'center', marginBottom: 12 },
   buttonText: { fontSize: 18, color: '#222' },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '85%', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxWidth: 480, alignItems: 'center', alignSelf: 'center' },
   modalTitle: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
   input: { width: '100%', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
   modalBtn: { flex: 1, marginHorizontal: 4, borderRadius: 8, padding: 12, alignItems: 'center' },

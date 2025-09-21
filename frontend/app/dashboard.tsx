@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { API_BASE } from '../config/api';
+import { storageGet, USER_NAME_KEY, USER_TOKEN_KEY } from '../utils/storage';
 
 
 export default function DashboardScreen() {
@@ -12,38 +14,33 @@ export default function DashboardScreen() {
   const [name, setName] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setName(localStorage.getItem('userName') || '');
-    }
+    (async () => {
+      const stored = await storageGet(USER_NAME_KEY);
+      if (stored) setName(stored);
+    })();
   }, []);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    fetch('http://localhost:3000/saldos/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
+    (async () => {
+      const token = await storageGet(USER_TOKEN_KEY);
+      if (!token) { setLoading(false); return; }
+      try {
+        const res = await fetch(`${API_BASE}/saldos/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           const totalSaldo = data.reduce((acc: number, item: any) => acc + item.valor, 0);
           const totalDespesas = data.filter((item: any) => item.valor < 0).reduce((acc: number, item: any) => acc + Math.abs(item.valor), 0);
           setSaldo(totalSaldo);
           setDespesas(totalDespesas);
         } else {
-          setSaldo(0);
-          setDespesas(0);
+          setSaldo(0); setDespesas(0);
         }
+      } catch (e) {
+        setSaldo(0); setDespesas(0);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setSaldo(0);
-        setDespesas(0);
-        setLoading(false);
-      });
+      }
+    })();
   }, []);
 
 
@@ -124,7 +121,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40 },
-  welcome: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 24 },
+  welcome: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 24, textAlign: 'center', width: '100%' },
   saldoCard: {
     backgroundColor: '#d1fae5',
     borderRadius: 18,

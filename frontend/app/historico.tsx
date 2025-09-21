@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { API_BASE } from '../config/api';
 
 type Movimentacao = {
   id: string;
@@ -22,7 +23,7 @@ export default function HistoricoScreen() {
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
     if (!token) return;
-    fetch('http://localhost:3000/saldos/me', {
+  fetch(`${API_BASE}/saldos/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())
@@ -53,7 +54,7 @@ export default function HistoricoScreen() {
       <TouchableOpacity style={styles.back} onPress={() => router.back()}>
         <MaterialIcons name="arrow-back" size={28} color="#222" />
       </TouchableOpacity>
-      <Text style={styles.title}>Movimentações</Text>
+  <Text style={styles.title}>Movimentações</Text>
 
       {/* Botão Filtrar */}
       <View style={styles.filtroRow}>
@@ -126,7 +127,7 @@ export default function HistoricoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
   back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
-  title: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
+  title: { fontSize: 32, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
   filtrarBtn: {
     flexDirection: 'row',

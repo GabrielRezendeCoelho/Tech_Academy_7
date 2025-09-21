@@ -36,3 +36,5 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     </AlertContext.Provider>
   );
 }
+
+export default AlertProvider;

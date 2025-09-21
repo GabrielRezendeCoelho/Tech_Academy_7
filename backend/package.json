@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch src --exec npx ts-node src/server.ts"
+    "dev": "nodemon --watch src --exec npx ts-node src/server.ts",
+    "kill-port": "powershell -Command \"$p = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select -First 1 -ExpandProperty OwningProcess; if ($p) { Stop-Process -Id $p -Force; Write-Output 'Port 3000 liberada (PID:' $p ')'; } else { Write-Output 'Porta 3000 já está livre.' }\"",
+    "restart-clean": "npm run kill-port && npm run dev"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

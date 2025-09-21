@@ -1,19 +1,3 @@
-// Reset de senha via email (sem token)
-export const resetPasswordByEmail = async (req: Request, res: Response) => {
-  const { email, novaSenha } = req.body;
-  if (!email || !novaSenha) {
-    return res.status(400).json({ error: 'E-mail e nova senha são obrigatórios.' });
-  }
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
-    const hashedPassword = await bcrypt.hash(novaSenha, 10);
-    await user.update({ password: hashedPassword });
-    res.json({ message: 'Senha redefinida com sucesso!' });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao redefinir senha', details: err });
-  }
-};
 
 import bcrypt from 'bcryptjs';
 // Deletar usuário autenticado, exigindo senha
@@ -124,22 +108,33 @@ export const updateUserByToken = async (req: Request, res: Response) => {
 };
 // LOGIN
 export const loginUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const rawBody = req.body;
+  const email = rawBody.email;
+  const password = rawBody.password || rawBody.senha; // aceita 'senha'
   if (!email || !password) {
     return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
   }
   try {
+    console.log('[LOGIN] Tentativa de login para email:', email);
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(401).json({ error: 'Usuário não encontrado.' });
+    if (!user) {
+      console.log('[LOGIN] Usuário não encontrado:', email);
+      return res.status(401).json({ error: 'Usuário não encontrado.' });
+    }
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ error: 'Senha inválida.' });
+    if (!valid) {
+      console.log('[LOGIN] Senha inválida para usuário id', user.id);
+      return res.status(401).json({ error: 'Senha inválida.' });
+    }
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || 'secreta',
       { expiresIn: '1h' }
     );
+    console.log('[LOGIN] Sucesso para usuário id', user.id);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, cpf: user.cpf } });
   } catch (err) {
+    console.error('[LOGIN] Erro inesperado', err);
     res.status(500).json({ error: 'Erro ao fazer login', details: err });
   }
 };
