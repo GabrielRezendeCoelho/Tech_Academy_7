@@ -5,6 +5,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
 import { storageGet, storageSet, storageClear, USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
+import BackButton from './components/BackButton';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function PerfilScreen() {
   const alert = useAppAlert();
@@ -196,27 +198,33 @@ export default function PerfilScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-        <FontAwesome name="arrow-left" size={24} color="#222" />
-      </TouchableOpacity>
-  <Text style={styles.title}>Perfil</Text>
-      <Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} style={styles.avatar} />
-<View style={styles.infoBoxUser}>
-  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-    <Text style={styles.labelUser}>Nome:</Text>
-    <Text style={styles.nameUser}>{nome}</Text>
-    <TouchableOpacity onPress={() => setModalVisible(true)} style={{ marginLeft: 8 }}>
-      <FontAwesome name="pencil" size={20} color="#228B22" />
-    </TouchableOpacity>
-  </View>
-  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-    <Text style={styles.labelUser}>Email:</Text>
-    <Text style={styles.emailUser}>{email}</Text>
-    <TouchableOpacity onPress={() => setModalEmailVisible(true)} style={{ marginLeft: 8 }}>
-      <FontAwesome name="pencil" size={18} color="#228B22" />
-    </TouchableOpacity>
-  </View>
-</View>
+      <BackButton />
+      <Text style={styles.title}>Perfil</Text>
+
+      {/* Card de header no padrão do dashboard */}
+      <View style={styles.headerCard}>
+        <View style={styles.iconCircle}>
+          <MaterialIcons name="account-circle" size={48} color="#fff" />
+        </View>
+        <Text style={styles.headerLabel}>Dados do usuário</Text>
+      </View>
+
+      <View style={styles.infoBoxUser}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={styles.labelUser}>Nome:</Text>
+          <Text style={styles.nameUser}>{nome}</Text>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={{ marginLeft: 8 }}>
+            <FontAwesome name="pencil" size={20} color="#228B22" />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.labelUser}>Email:</Text>
+          <Text style={styles.emailUser}>{email}</Text>
+          <TouchableOpacity onPress={() => setModalEmailVisible(true)} style={{ marginLeft: 8 }}>
+            <FontAwesome name="pencil" size={18} color="#228B22" />
+          </TouchableOpacity>
+        </View>
+      </View>
       {/* Modal para alterar email */}
       <Modal visible={modalEmailVisible} transparent animationType="slide">
         <View style={styles.modalBg}>
@@ -345,7 +353,7 @@ export default function PerfilScreen() {
   );
 }
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40, paddingHorizontal: 12 },
   successBanner: {
     position: 'absolute',
     top: 20,
@@ -383,8 +391,31 @@ const styles = StyleSheet.create({
   nameUser: { fontSize: 18, color: '#222', fontWeight: '700' },
   emailUser: { fontSize: 16, color: '#666', fontWeight: '500' },
   back: { position: 'absolute', left: 30, top: 60 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
-  avatar: { width: 90, height: 90, borderRadius: 45, marginBottom: 12 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 16, textAlign: 'center', width: '100%', color: '#222' },
+
+  headerCard: {
+    backgroundColor: '#d1fae5',
+    borderRadius: 18,
+    alignItems: 'center',
+    padding: 20,
+    marginBottom: 16,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    backgroundColor: '#22c55e',
+    width: 80, height: 80, borderRadius: 40,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  headerLabel: { fontSize: 16, color: '#374151' },
+
+  sectionTitle: {
+    fontSize: 20, fontWeight: '700', color: '#222',
+    width: '85%', textAlign: 'center', marginVertical: 8,
+  },
   info: { fontSize: 16, color: '#6b7280', marginBottom: 24 },
   button: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 16, width: '70%', alignItems: 'center', marginBottom: 12 },
   buttonText: { fontSize: 18, color: '#222' },

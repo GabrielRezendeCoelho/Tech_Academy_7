@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAppAlert } from './components/AppAlert';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, FlatList } from 'react-native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
 import { storageGet, USER_TOKEN_KEY } from '../utils/storage';
+import BackButton from './components/BackButton';
 
 type SaldoHistorico = {
   id: string;
@@ -15,7 +15,7 @@ type SaldoHistorico = {
 
 export default function SaldoScreen() {
   const alert = useAppAlert();
-  const router = useRouter();
+
   const [saldo, setSaldo] = useState<number>(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [valor, setValor] = useState('');
@@ -26,6 +26,7 @@ export default function SaldoScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editValor, setEditValor] = useState('');
   const [editOrigem, setEditOrigem] = useState('');
+
   // Função para abrir modal de edição
   const openEditModal = (item: SaldoHistorico) => {
     setEditId(item.id);
@@ -37,10 +38,10 @@ export default function SaldoScreen() {
   // Função para editar saldo
   const handleEditSaldo = async () => {
     if (!editId || !editValor || !editOrigem) return;
-  const token = await storageGet(USER_TOKEN_KEY);
+    const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-  const res = await fetch(`${API_BASE}/saldos/${editId}`, {
+      const res = await fetch(`${API_BASE}/saldos/${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +54,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza histórico
-  fetch(`${API_BASE}/saldos/me`, {
+      fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -81,10 +82,10 @@ export default function SaldoScreen() {
 
   // Função para deletar saldo
   const handleDeleteSaldo = async (id: string) => {
-  const token = await storageGet(USER_TOKEN_KEY);
+    const token = await storageGet(USER_TOKEN_KEY);
     if (!token) return;
     try {
-  const res = await fetch(`${API_BASE}/saldos/${id}`, {
+      const res = await fetch(`${API_BASE}/saldos/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -93,7 +94,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza histórico
-  fetch(`${API_BASE}/saldos/me`, {
+      fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -151,7 +152,7 @@ export default function SaldoScreen() {
       Alert.alert('Erro', 'Preencha o valor e a origem');
       return;
     }
-  const token = await storageGet(USER_TOKEN_KEY);
+    const token = await storageGet(USER_TOKEN_KEY);
     if (!token) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
@@ -168,7 +169,7 @@ export default function SaldoScreen() {
     // Categoria padrão (ex: 1)
     const categoriaId = 1;
     try {
-  const res = await fetch(`${API_BASE}/saldos`, {
+      const res = await fetch(`${API_BASE}/saldos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +182,7 @@ export default function SaldoScreen() {
         return;
       }
       // Atualiza saldo e histórico após salvar
-  fetch(`${API_BASE}/saldos/me`, {
+      fetch(`${API_BASE}/saldos/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -204,10 +205,10 @@ export default function SaldoScreen() {
           setSaldo(0);
           setHistorico([]);
         });
-  setModalVisible(false);
-  setValor('');
-  setOrigem('');
-  alert.show('Saldo adicionado com sucesso!');
+      setModalVisible(false);
+      setValor('');
+      setOrigem('');
+      alert.show('Saldo adicionado com sucesso!');
     } catch {
       Alert.alert('Erro', 'Erro ao conectar com o servidor');
     }
@@ -215,25 +216,35 @@ export default function SaldoScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-        <FontAwesome name="arrow-left" size={24} color="#222" />
-      </TouchableOpacity>
-  <Text style={styles.title}>Meu Saldo</Text>
-      <View style={styles.circle}>
-        <FontAwesome name="dollar" size={48} color="#fff" />
-      </View>
-      <Text style={styles.saldo}>
-        {`R$${saldo.toFixed(2)}`}
-      </Text>
+      <BackButton />
+      <Text style={styles.title}>Meu Saldo</Text>
 
-  <TouchableOpacity style={[styles.button, { backgroundColor: '#22c55e', marginBottom: 10 }]} onPress={() => setModalVisible(true)}>
-        <Text style={[styles.buttonText, { color: '#fff' }]}>Colocar saldo</Text>
-      </TouchableOpacity>
+      {/* Card de saldo (mesmo layout do dashboard) */}
+      <View style={styles.saldoCard}>
+        <View style={styles.iconCircle}>
+          <MaterialIcons name="account-balance-wallet" size={48} color="#fff" />
+        </View>
+        <Text style={styles.balanceLabel}>Saldo Atual</Text>
+        <Text style={styles.balanceValue}>
+          R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        </Text>
+      </View>
+
+      {/* Ações */}
+      <View style={{ width: '85%', marginBottom: 16 }}>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
+          onPress={() => setModalVisible(true)}
+        >
+          <MaterialIcons name="add-circle-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.actionBtnText}>Adicionar saldo</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Histórico de saldo */}
       <Text style={styles.historicoTitle}>Histórico de saldo</Text>
-  <View style={{ height: 8 }} />
-  <FlatList
+      <View style={{ height: 8 }} />
+      <FlatList
         data={historico}
         keyExtractor={item => item.id}
         style={{ width: '100%' }}
@@ -289,7 +300,7 @@ export default function SaldoScreen() {
             </View>
           </View>
         </View>
-  </Modal>
+      </Modal>
 
       {/* Modal para adicionar saldo */}
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -323,15 +334,57 @@ export default function SaldoScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
-  back: { position: 'absolute', left: 30, top: 60 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
-  circle: { backgroundColor: '#22c55e', width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  saldo: { fontSize: 32, fontWeight: '700', marginBottom: 24 },
-  button: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center' },
-  buttonText: { fontSize: 20, color: '#222' },
-  historicoTitle: { fontSize: 20, fontWeight: '700', color: '#222', alignSelf: 'flex-start', marginLeft: '8%', marginTop: 24, marginBottom: 8 },
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40, paddingHorizontal: 12 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 16, textAlign: 'center', width: '100%' },
+
+  // Card igual ao dashboard
+  saldoCard: {
+    backgroundColor: '#d1fae5',
+    borderRadius: 18,
+    alignItems: 'center',
+    padding: 24,
+    marginBottom: 24,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    backgroundColor: '#22c55e',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  balanceLabel: { fontSize: 18, color: '#374151', marginBottom: 4 },
+  balanceValue: { fontSize: 36, fontWeight: '700', color: '#222', marginBottom: 0 },
+
+  // Botão principal
+  actionBtn: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  // Lista
+  historicoTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#222',
+    width: '100%',           // centraliza a área do texto
+    textAlign: 'center',     // centraliza o texto
+    marginTop: 8,
+    marginBottom: 8,
+  },
+
   historicoItem: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6',
     borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 10, width: '100%', alignSelf: 'center',

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { API_BASE } from '../config/api';
+import BackButton from './components/BackButton';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type Movimentacao = {
   id: string;
@@ -51,10 +52,18 @@ export default function HistoricoScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-        <MaterialIcons name="arrow-back" size={28} color="#222" />
-      </TouchableOpacity>
-  <Text style={styles.title}>Movimentações</Text>
+      <BackButton />
+      <Text style={styles.title}>Movimentações</Text>
+
+      {/* Card de header no padrão do dashboard */}
+      <View style={styles.headerCard}>
+        <View style={styles.iconCircle}>
+          <MaterialIcons name="history" size={40} color="#fff" />
+        </View>
+        <Text style={styles.headerLabel}>Histórico de transações</Text>
+      </View>
+
+      <Text style={styles.sectionTitle}>Últimas movimentações</Text>
 
       {/* Botão Filtrar */}
       <View style={styles.filtroRow}>
@@ -125,9 +134,33 @@ export default function HistoricoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
-  back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
-  title: { fontSize: 32, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40, paddingHorizontal: 12 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 16, textAlign: 'center', width: '100%', color: '#222' },
+
+  headerCard: {
+    backgroundColor: '#d1fae5',
+    borderRadius: 18,
+    alignItems: 'center',
+    padding: 20,
+    marginBottom: 16,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    backgroundColor: '#22c55e',
+    width: 74, height: 74, borderRadius: 37,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  },
+  headerLabel: { fontSize: 16, color: '#374151' },
+
+  sectionTitle: {
+    fontSize: 20, fontWeight: '700', color: '#222',
+    width: '85%', textAlign: 'center', marginVertical: 8,
+  },
+
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
   filtrarBtn: {
     flexDirection: 'row',
@@ -143,7 +176,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6',
     borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 10, width: '100%', minHeight: 56, alignSelf: 'center',
   },
-  // ...existing code...
   icon: { marginRight: 16 },
   movDescricao: { fontSize: 18, fontWeight: '600', color: '#222' },
   movData: { fontSize: 13, color: '#6B7280' },

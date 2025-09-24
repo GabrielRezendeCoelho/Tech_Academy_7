@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { API_BASE } from '../config/api';
 import { storageGet, USER_TOKEN_KEY } from '../utils/storage';
+import BackButton from './components/BackButton';
 
 
 
@@ -216,53 +217,30 @@ export default function DespesasScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.container}>
-        <TouchableOpacity style={styles.back} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={28} color="#222" />
-        </TouchableOpacity>
-  <Text style={styles.title}>Despesas</Text>
+        <BackButton />
+        <Text style={styles.title}>Despesas</Text>
 
-        {/* Botão Filtrar */}
-        <View style={styles.filtroRow}>
-          <TouchableOpacity
-            style={styles.filtrarBtn}
-            onPress={() => setDatePickerVisibility(true)}
-          >
-            <MaterialIcons name="calendar-today" size={20} color="#228B22" />
-            <Text style={styles.filtrarBtnText}>
-              {filtroData ? filtroData.toLocaleDateString('pt-BR') : 'Selecionar data'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filtrarBtn, { backgroundColor: '#228B22', marginLeft: 8 }]}
-            onPress={() => setFiltrar(true)}
-            disabled={!filtroData}
-          >
-            <MaterialIcons name="search" size={20} color="#fff" />
-            <Text style={[styles.filtrarBtnText, { color: '#fff' }]}>Filtrar</Text>
-          </TouchableOpacity>
-          {filtrar && (
-            <TouchableOpacity
-              style={[styles.filtrarBtn, { backgroundColor: '#ef4444', marginLeft: 8 }]}
-              onPress={() => { setFiltrar(false); setFiltroData(null); }}
-            >
-              <MaterialIcons name="clear" size={20} color="#fff" />
-              <Text style={[styles.filtrarBtnText, { color: '#fff' }]}>Limpar</Text>
-            </TouchableOpacity>
-          )}
+        {/* Card de header no padrão do dashboard */}
+        <View style={styles.headerCard}>
+          <View style={styles.iconCircle}>
+            <MaterialIcons name="request-quote" size={40} color="#fff" />
+          </View>
+          <Text style={styles.headerLabel}>Controle suas despesas</Text>
         </View>
-        <DateTimePickerModal
-          isVisible={isDatePickerVisible}
-          mode="date"
-          onConfirm={date => { setFiltroData(date); setDatePickerVisibility(false); }}
-          onCancel={() => setDatePickerVisibility(false)}
-        />
 
-        {/* Botão para abrir modal de adicionar despesa */}
-        <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Adicionar despesa</Text>
-        </TouchableOpacity>
+        {/* Botão principal no padrão */}
+        <View style={{ width: '85%', marginBottom: 12 }}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
+            onPress={() => setModalVisible(true)}
+          >
+            <MaterialIcons name="add-circle-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.actionBtnText}>Adicionar despesa</Text>
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.subTitle}>Despesas recentes</Text>
+        <Text style={styles.sectionTitle}>Lista de despesas</Text>
+
         <FlatList
           data={despesasFiltradas}
           keyExtractor={item => item.id}
@@ -376,9 +354,42 @@ export default function DespesasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 12 },
-  back: { position: 'absolute', left: 30, top: 60, zIndex: 1 },
-  title: { fontSize: 32, fontWeight: '700', marginBottom: 24, textAlign: 'center', width: '100%' },
+  container: { flex: 1, alignItems: 'center', paddingTop: 40, backgroundColor: '#fff' },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 16, textAlign: 'center', width: '100%', color: '#222' },
+
+  headerCard: {
+    backgroundColor: '#d1fae5',
+    borderRadius: 18,
+    alignItems: 'center',
+    padding: 20,
+    marginBottom: 16,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    backgroundColor: '#22c55e',
+    width: 74, height: 74, borderRadius: 37,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  headerLabel: { fontSize: 16, color: '#374151' },
+
+  actionBtn: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  sectionTitle: {
+    fontSize: 20, fontWeight: '700', color: '#222',
+    width: '85%', textAlign: 'center', marginVertical: 8,
+  },
+
   filtroRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, width: '90%' },
   filtrarBtn: {
     flexDirection: 'row',
@@ -412,8 +423,12 @@ const styles = StyleSheet.create({
   despesaDescricao: { fontSize: 18, fontWeight: '600', color: '#222' },
   despesaData: { fontSize: 13, color: '#6B7280' },
   despesaValor: { fontSize: 18, fontWeight: '700', color: '#ef4444', minWidth: 100, textAlign: 'right' },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxWidth: 480, alignItems: 'center', alignSelf: 'center' },
+  modalBg: { backgroundColor: 'rgba(0,0,0,0.4)', flex: 1, justifyContent: 'center', alignItems: 'center' },
+  modalContent: {
+    backgroundColor: '#fff',
+    width: '90%', maxWidth: 480,
+    borderRadius: 16, padding: 16,
+  },
   modalTitle: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
   modalBtn: { flex: 1, marginHorizontal: 4, borderRadius: 8, padding: 12, alignItems: 'center' },
 });
