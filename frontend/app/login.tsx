@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Keyboa
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,8 +35,11 @@ export default function LoginScreen() {
         setErrorMsg(data?.error || `Falha no login (status ${res.status})`);
         return;
       }
+      await AsyncStorage.setItem(USER_NAME_KEY, data.user.name);
+      await AsyncStorage.setItem(USER_EMAIL_KEY, data.user.email);
+      await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
       setSuccessMsg('Login realizado com sucesso! Redirecionando...');
-      setTimeout(() => router.push('/dashboard'), 600);
+      setTimeout(() => router.replace('/dashboard'), 600);
     } catch (e: any) {
       setErrorMsg(`Erro de rede: ${e?.message || 'não foi possível conectar ao servidor'}`);
     } finally {
