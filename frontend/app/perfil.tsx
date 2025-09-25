@@ -4,7 +4,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, TextInput, Aler
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
-import { storageGet, storageSet, storageClear, USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storageSet, storageClear, USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
 import BackButton from './components/BackButton';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -16,17 +17,12 @@ export default function PerfilScreen() {
   const [successMsg, setSuccessMsg] = useState('');
   useEffect(() => {
     (async () => {
-      const data = await storageMultiFetch();
-      if (data.name) setNome(data.name);
-      if (data.email) setEmail(data.email);
+      const name = await AsyncStorage.getItem(USER_NAME_KEY);
+      const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
+      if (name) setNome(name);
+      if (email) setEmail(email);
     })();
   }, []);
-
-  async function storageMultiFetch() {
-    const name = await storageGet(USER_NAME_KEY);
-    const email = await storageGet(USER_EMAIL_KEY);
-    return { name, email };
-  }
   const [modalVisible, setModalVisible] = useState(false);
   const [modalEmailVisible, setModalEmailVisible] = useState(false);
   const [senhaEmail, setSenhaEmail] = useState('');
@@ -48,7 +44,7 @@ export default function PerfilScreen() {
       setErroDelete('Digite sua senha');
       return;
     }
-  const token = await storageGet(USER_TOKEN_KEY);
+  const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
     if (!token) {
       setErroDelete('Usuário não autenticado');
       return;
@@ -89,7 +85,7 @@ export default function PerfilScreen() {
       setErroEmail('Digite sua senha atual');
       return;
     }
-  const token = await storageGet(USER_TOKEN_KEY);
+  const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
     if (!token) {
       setErroEmail('Usuário não autenticado');
       return;
@@ -129,7 +125,7 @@ export default function PerfilScreen() {
       Alert.alert('Erro', 'Digite um nome válido');
       return;
     }
-  const token = await storageGet(USER_TOKEN_KEY);
+  const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
     if (!token) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
@@ -163,7 +159,7 @@ export default function PerfilScreen() {
       setErroSenha('Preencha todos os campos');
       return;
     }
-  const token = await storageGet(USER_TOKEN_KEY);
+  const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
     if (!token) {
       setErroSenha('Usuário não autenticado');
       return;

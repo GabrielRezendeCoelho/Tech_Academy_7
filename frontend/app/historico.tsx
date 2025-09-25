@@ -5,6 +5,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { API_BASE } from '../config/api';
 import BackButton from './components/BackButton';
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Movimentacao = {
   id: string;
@@ -22,28 +23,29 @@ export default function HistoricoScreen() {
   const [filtrar, setFiltrar] = useState(false);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    if (!token) return;
-  fetch(`${API_BASE}/saldos/me`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Ordena por data decrescente
-          const ordenado = data.slice().sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-          setMovimentacoes(ordenado.map((item: any) => ({
-            id: String(item.id),
-            valor: item.valor,
-            origem: item.origem || (item.valor > 0 ? 'Depósito' : 'Despesa'),
-            data: new Date(item.data).toISOString().slice(0, 10),
-            dataFormatada: new Date(item.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-          })));
-        } else {
-          setMovimentacoes([]);
-        }
+    AsyncStorage.getItem('userToken').then(token => {
+      if (!token) return;
+      fetch(`${API_BASE}/saldos/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       })
-      .catch(() => setMovimentacoes([]));
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            // Ordena por data decrescente
+            const ordenado = data.slice().sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+            setMovimentacoes(ordenado.map((item: any) => ({
+              id: String(item.id),
+              valor: item.valor,
+              origem: item.origem || (item.valor > 0 ? 'Depósito' : 'Despesa'),
+              data: new Date(item.data).toISOString().slice(0, 10),
+              dataFormatada: new Date(item.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+            })));
+          } else {
+            setMovimentacoes([]);
+          }
+        })
+        .catch(() => setMovimentacoes([]));
+    });
   }, []);
 
   const movimentacoesFiltradas = filtrar && filtroData

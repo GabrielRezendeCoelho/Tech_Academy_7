@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
-import { storageGet, USER_NAME_KEY, USER_TOKEN_KEY } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY, storageGet } from '../utils/storage';
 
 
 export default function DashboardScreen() {
@@ -12,11 +13,14 @@ export default function DashboardScreen() {
   const [despesas, setDespesas] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     (async () => {
-      const stored = await storageGet(USER_NAME_KEY);
-      if (stored) setName(stored);
+      const storedName = await AsyncStorage.getItem(USER_NAME_KEY);
+      const storedEmail = await AsyncStorage.getItem(USER_EMAIL_KEY);
+      if (storedName) setName(storedName);
+      if (storedEmail) setEmail(storedEmail);
     })();
   }, []);
 
@@ -73,6 +77,9 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
   <Text style={styles.welcome}>Bem-vindo, {name || 'usuário'}!</Text>
+  {email ? (
+    <Text style={styles.email}>Email: {email}</Text>
+  ) : null}
 
       <TouchableOpacity
         style={{
@@ -122,6 +129,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', paddingTop: 40 },
   welcome: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 24, textAlign: 'center', width: '100%' },
+  email: { fontSize: 16, color: '#666', marginBottom: 12, textAlign: 'center', width: '100%' },
   saldoCard: {
     backgroundColor: '#d1fae5',
     borderRadius: 18,

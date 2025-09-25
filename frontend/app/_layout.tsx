@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import "../polyfills/backhandler";
 import { AlertProvider } from "./components/AppAlert";
+import "../polyfills/backhandler";
 
 export default function Layout() {
   return (
