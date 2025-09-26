@@ -1,7 +1,9 @@
-
 import bcrypt from 'bcryptjs';
-// Deletar usuário autenticado, exigindo senha
+import { Request, Response } from 'express';
+import User from '../models/userModel';
+import jwt from 'jsonwebtoken';
 
+// Deletar usuário autenticado, exigindo senha
 export const deleteUserByToken = async (req: any, res: any) => {
   try {
     const authHeader = req.headers.authorization;
@@ -138,11 +140,6 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao fazer login', details: err });
   }
 };
-import { Request, Response } from 'express';
-import User from '../models/userModel';
-
-import jwt from 'jsonwebtoken';
-
 export const createUser = async (req: Request, res: Response) => {
   const { name, email, password, cpf } = req.body;
   if (!name || !email || !password || !cpf) {
@@ -208,5 +205,21 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.json({ message: 'Usuário deletado com sucesso' });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao deletar usuário', details: err });
+  }
+};
+// Redefine a senha do usuário pelo email
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, novaSenha } = req.body;
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+    const hashedPassword = await bcrypt.hash(novaSenha, 10);
+    user.password = hashedPassword;
+    await user.save();
+    return res.json({ message: 'Senha redefinida com sucesso!' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao redefinir senha.' });
   }
 };

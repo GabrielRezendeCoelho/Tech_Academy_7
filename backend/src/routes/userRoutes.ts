@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, listUsers, getUser, loginUser, updateUserByToken, updateEmailByToken, updatePasswordByToken, deleteUserByToken } from '../controllers/userController';
+import { createUser, listUsers, getUser, loginUser, updateUserByToken, updateEmailByToken, updatePasswordByToken, deleteUserByToken, resetPassword } from '../controllers/userController';
 const router = Router();
 router.put('/update-password', updatePasswordByToken);
 router.put('/update-email', updateEmailByToken);
@@ -9,4 +9,5 @@ router.post('/', createUser);
 router.get('/', listUsers);
 router.get('/:id', getUser);
 router.delete('/delete', deleteUserByToken);
+router.post('/reset-password', resetPassword);
 export default router;

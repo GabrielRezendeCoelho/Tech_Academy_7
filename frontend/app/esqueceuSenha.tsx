@@ -30,21 +30,15 @@ export default function EsqueceuSenhaScreen() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, novaSenha: senha })
 			});
-			let data = null;
-			try {
-				data = await response.json();
-			} catch (e) {
-				throw new Error('Resposta inesperada do servidor');
-			}
+			const data = await response.json();
 			if (!response.ok) {
 				Alert.alert('Erro', data?.error || 'Erro ao redefinir senha');
 				setLoading(false);
 				return;
 			}
-			Alert.alert('Sucesso', 'Senha alterada com sucesso!');
-			setTimeout(() => {
-				router.push('/login');
-			}, 1000);
+			Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
+				{ text: 'OK', onPress: () => router.replace('/login') }
+			]);
 		} catch (err: any) {
 			Alert.alert('Erro', err.message || 'Erro ao conectar com o servidor');
 		} finally {
