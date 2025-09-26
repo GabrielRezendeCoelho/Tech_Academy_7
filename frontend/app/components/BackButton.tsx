@@ -1,39 +1,34 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-
-import type { Router } from 'expo-router';
-
-type RouterPushPath = Parameters<Router['push']>[0];
+import React from "react";
+import { TouchableOpacity, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 type Props = {
-  style?: ViewStyle;
-  to?: RouterPushPath; // default: '/menu'
+  to?: string; // rota para voltar, opcional
 };
 
-export default function BackButton({ style, to = '/menu' }: Props) {
+const BackButton: React.FC<Props> = ({ to }) => {
   const router = useRouter();
   return (
     <TouchableOpacity
-      style={[styles.back, style]}
-      onPress={() => router.push(to)}
-      hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+      style={styles.button}
+      onPress={() => (to ? router.push(to as any) : router.back())}
     >
-      <MaterialIcons name="arrow-back" size={28} color="#222" />
+      <MaterialIcons name="arrow-back" size={28} color="#228B22" />
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  back: {
-    position: 'absolute',
+  button: {
+    position: "absolute",
+    top: 30,
     left: 30,
-    top: 60,
     zIndex: 2,
-    elevation: 2,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f3f4f6",
     borderRadius: 8,
     padding: 10,
   },
 });
+
+export default BackButton;
