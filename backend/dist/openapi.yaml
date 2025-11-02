@@ -1,0 +1,452 @@
+openapi: 3.0.3
+info:
+  title: Tech Academy API
+  description: API para gerenciamento de usuários, categorias e saldos
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+  /users:
+    post:
+      summary: Criar um usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewUser"
+      responses:
+        "201":
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCreated"
+        "400":
+          description: Requisição inválida
+    get:
+      summary: Listar usuários
+      responses:
+        "200":
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  /users/login:
+    post:
+      summary: Autenticar usuário (login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Token e dados do usuário
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Credenciais inválidas
+  /users/:id:
+    get:
+      summary: Obter usuário por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usuário
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Não encontrado
+  /users/update:
+    put:
+      summary: Atualizar nome/email do usuário autenticado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+              example:
+                name: Novo Nome
+                email: novo@email.com
+      responses:
+        "200":
+          description: Atualização feita
+  /users/update-email:
+    put:
+      summary: Atualizar email (requer senha atual)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                senhaAtual:
+                  type: string
+              example:
+                email: novo@email.com
+                senhaAtual: senha123
+      responses:
+        "200":
+          description: Email atualizado
+  /users/update-password:
+    put:
+      summary: Atualizar senha do usuário autenticado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                senhaAtual:
+                  type: string
+                novaSenha:
+                  type: string
+              example:
+                senhaAtual: senha123
+                novaSenha: novaSenha123
+      responses:
+        "200":
+          description: Senha alterada
+  /users/delete:
+    delete:
+      summary: Deletar usuário autenticado (requer senha)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                senha:
+                  type: string
+              example:
+                senha: senha123
+      responses:
+        "200":
+          description: Usuário deletado
+  /users/reset-password:
+    post:
+      summary: Redefinir senha pelo email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                novaSenha:
+                  type: string
+              example:
+                email: usuario@exemplo.com
+                novaSenha: novaSenha123
+      responses:
+        "200":
+          description: Senha redefinida
+  /categorias:
+    post:
+      summary: Criar categoria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCategoria"
+      responses:
+        "201":
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categoria"
+    get:
+      summary: Listar categorias
+      responses:
+        "200":
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Categoria"
+  /categorias/{id}:
+    get:
+      summary: Obter categoria por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Categoria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categoria"
+    put:
+      summary: Atualizar categoria
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCategoria"
+      responses:
+        "200":
+          description: Categoria atualizada
+    delete:
+      summary: Deletar categoria
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Categoria deletada
+  /saldos:
+    post:
+      summary: Criar saldo (lancamento)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSaldo"
+      responses:
+        "201":
+          description: Saldo criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Saldo"
+    get:
+      summary: Listar saldos
+      responses:
+        "200":
+          description: Lista de saldos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Saldo"
+  /saldos/{id}:
+    get:
+      summary: Obter saldo por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saldo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Saldo"
+    put:
+      summary: Atualizar saldo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSaldo"
+      responses:
+        "200":
+          description: Saldo atualizado
+    delete:
+      summary: Deletar saldo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saldo deletado
+  /saldos/me:
+    get:
+      summary: Obter saldos do usuário autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de saldos do usuário
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Saldo"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        cpf:
+          type: string
+    NewUser:
+      type: object
+      required: [name, email, password, cpf]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        cpf:
+          type: string
+    UserCreated:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+    Categoria:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+    NewCategoria:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+    Saldo:
+      type: object
+      properties:
+        id:
+          type: integer
+        valor:
+          type: number
+          format: float
+        userId:
+          type: integer
+        categoriaId:
+          type: integer
+        data:
+          type: string
+          format: date-time
+        origem:
+          type: string
+    NewSaldo:
+      type: object
+      required: [valor, userId, categoriaId]
+      properties:
+        valor:
+          type: number
+          format: float
+        userId:
+          type: integer
+        categoriaId:
+          type: integer
+        data:
+          type: string
+          format: date-time
+        origem:
+          type: string

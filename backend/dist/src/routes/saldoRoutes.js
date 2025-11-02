@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const saldoController_1 = require("../controllers/saldoController");
+const router = (0, express_1.Router)();
+router.get('/me', saldoController_1.getSaldoUsuario);
+router.post('/', saldoController_1.createSaldo);
+router.get('/', saldoController_1.listSaldos);
+router.get('/:id', saldoController_1.getSaldo);
+router.put('/:id', saldoController_1.updateSaldo);
+router.delete('/:id', saldoController_1.deleteSaldo);
+exports.default = router;
