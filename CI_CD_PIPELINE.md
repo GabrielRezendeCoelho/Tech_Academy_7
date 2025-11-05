@@ -118,6 +118,72 @@ deploy-production:
 - ✅ Docker image size otimizado
 - ✅ Load time < 3 segundos
 
+## Checklist de Segurança do Pipeline
+
+Para reduzir riscos, aplicar as verificações abaixo automaticamente na pipeline CI/CD (por exemplo, GitHub Actions). As ferramentas sugeridas são exemplos — adapte conforme política organizacional.
+
+1) Dependency & SCA (Software Composition Analysis)
+  - Executar `npm audit` e uma ferramenta de SCA (Snyk, OWASP Dependency-Check, ou `npm audit` + relatório).
+  - Critério: falhar o job se existirem CVEs com severidade >= HIGH sem justificativa registrada.
+
+2) Static Application Security Testing (SAST)
+  - Rodar ferramentas como Semgrep, CodeQL, e regras de segurança do ESLint (ex.: eslint-plugin-security).
+  - Subir resultados em SARIF para integração com GitHub Security.
+
+3) Secret Scanning
+  - Executar `gitleaks`, `git-secrets` ou `truffleHog` em PRs. Bloquear merge se credenciais ativas forem encontradas.
+
+4) Container Image Scanning
+  - Usar Trivy ou Grype para escanear imagens construídas antes do push.
+  - Critério: fail build se vulnerabilidades CRITICAL encontradas na imagem final.
+
+5) IaC Scanning
+  - Verificar templates de infraestrutura (docker-compose, Helm, Terraform) com Checkov, tflint ou KICS.
+
+6) SBOM & Reproducibility
+  - Gerar SBOM (CycloneDX/SPDX) e armazenar como artefato do pipeline.
+
+7) License & Policy Checks
+  - Verificar licenças de dependências e aplicar policy gates (ex.: bloquear licenças não aprovadas).
+
+8) Runtime Hardening & Dockerfile checks
+  - Verificar que Dockerfiles usem USER não-root, que variáveis sensíveis não sejam embutidas e que a imagem seja multi-stage.
+
+9) Security Tests em Staging
+  - Executar smoke tests de segurança (autenticação/autorização, endpoints críticos) em ambiente de staging após deploy.
+
+10) Alerting e Remediação
+  - Enviar resultados críticos para canal de ops (Slack/Teams) e abrir issues automatizadas para vulnerabilidades bloqueantes.
+
+Exemplo resumido de job (GitHub Actions):
+
+```yaml
+security:
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v3
+   - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: '18'
+   - name: Install deps
+    run: npm ci
+   - name: Run Snyk (SCA)
+    uses: snyk/actions/node@master
+    with:
+      args: test
+   - name: Run Semgrep (SAST)
+    uses: returntocorp/semgrep-action@v1
+   - name: Trivy scan
+    uses: aquasecurity/trivy-action@master
+
+# Defina quais resultados quebram o build (ex.: CVE >= HIGH, secrets detectados)
+```
+
+Recomendação de política de falha:
+- Falhar PR se: SAST reportar vulnerabilidade HIGH/CRITICAL, SCA encontrar CVE >= HIGH, secret-scan detectar segredos ativos.
+- Para achados menores: abrir issue automaticamente e bloquear merge até tratativa dentro do SLA definido.
+
 ## Secrets Configuration
 
 ### Required GitHub Secrets
