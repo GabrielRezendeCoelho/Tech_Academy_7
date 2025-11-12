@@ -1,7 +1,7 @@
-import { FinancialAccount } from '../../domain/financial/FinancialAccount';
-import { Transaction } from '../../domain/financial/Transaction';
-import { Money } from '../../domain/financial/Money';
-import { Category } from '../../domain/financial/Category';
+import { FinancialAccount } from '../domain/financial/FinancialAccount';
+import { Transaction } from '../domain/financial/Transaction';
+import { Money } from '../domain/financial/Money';
+import { Category } from '../domain/financial/Category';
 
 describe('FinancialAccount Aggregate', () => {
   let account: FinancialAccount;
@@ -126,13 +126,13 @@ describe('FinancialAccount Aggregate', () => {
       // Add high expense to trigger excessive spending
       const expenseCategory = Category.create('Shopping');
       const expenseMoney = Money.create(6000);
-      const expenseTransaction = Transaction.create(2, expenseMoney, expenseCategory, 'EXPENSE');
+  const expenseTransaction = Transaction.create(2, expenseMoney, expenseCategory, 'EXPENSE');
+  account.addTransaction(expenseTransaction);
+  const threshold = Money.create(5000);
+  account.checkAndNotifyExcessiveSpending(threshold);
       
-      const threshold = Money.create(5000);
-      account.checkAndNotifyExcessiveSpending(threshold);
-      
-      const events = account.domainEvents;
-      expect(events.some(event => event.type === 'ExcessiveSpendingDetected')).toBe(true);
+  const events = account.domainEvents;
+  expect(events.some((event: any) => event.type === 'ExcessiveSpendingDetected')).toBe(true);
     });
   });
 });

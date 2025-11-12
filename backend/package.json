@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.4",
     "sequelize": "^6.37.7",
+  "redis": "^4.6.7",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
   },

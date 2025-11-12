@@ -1,4 +1,4 @@
-import { Money } from '../../domain/financial/Money';
+import { Money } from '../domain/financial/Money';
 
 describe('Money Value Object', () => {
   describe('create', () => {

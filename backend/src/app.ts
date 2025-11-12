@@ -8,6 +8,7 @@ import usersRoutes from "./routes/userRoutes";
 import categoriaRoutes from "./routes/categoriaRoutes";
 import saldoRoutes from "./routes/saldoRoutes";
 import sequelize from "./config/database";
+import { connectRedis } from './config/redis';
 
 const app = express();
 
@@ -52,6 +53,8 @@ sequelize
   .sync({ alter: true })
   .then(() => {
     console.log("Banco de dados sincronizado com sucesso.");
+    // Conectar ao Redis após sincronizar o DB (não bloqueante)
+    connectRedis().then(() => console.log('Redis conectado.')).catch((err) => console.warn('Falha ao conectar Redis:', err));
   })
   .catch((error): any => {
     console.error("Erro ao sincronizar o banco de dados:", error);

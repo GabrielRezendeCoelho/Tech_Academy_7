@@ -14,7 +14,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d
     networks:
       - kash-network
     healthcheck:
@@ -80,7 +80,7 @@ services:
     environment:
       REACT_APP_API_URL: http://localhost:3000
     ports:
-      - "8080:80"
+      - "8080:19006"
     depends_on:
       backend:
         condition: service_healthy
