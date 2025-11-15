@@ -98,6 +98,15 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for secret scanning
+    
+    # Secret Scanning with Gitleaks
+    - name: Run Gitleaks Secret Scanner
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master

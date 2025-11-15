@@ -29,7 +29,7 @@ async function delCache(keys: string | string[]) {
   try {
     if (Array.isArray(keys)) {
       if (keys.length === 0) return;
-      await redisClient.del(...keys);
+      await redisClient.del(keys);
     } else {
       await redisClient.del(keys);
     }

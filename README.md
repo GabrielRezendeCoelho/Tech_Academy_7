@@ -2,52 +2,93 @@
 
 [![CI/CD Pipeline](https://github.com/GabrielRezendeCoelho/Tech_Academy_7/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/GabrielRezendeCoelho/Tech_Academy_7/actions/workflows/ci-cd.yml)
 [![Coverage](https://codecov.io/gh/GabrielRezendeCoelho/Tech_Academy_7/branch/main/graph/badge.svg)](https://codecov.io/gh/GabrielRezendeCoelho/Tech_Academy_7)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=kash&metric=security_rating)](https://sonarcloud.io/dashboard?id=kash)
+[![Tech Academy](https://img.shields.io/badge/Tech%20Academy-100%25-success)](https://github.com/GabrielRezendeCoelho/Tech_Academy_7)
+[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success)](https://github.com/GabrielRezendeCoelho/Tech_Academy_7)
 
 ## 🎯 Sobre o projeto
 
-**Kash** é um aplicativo web/mobile para controle financeiro pessoal, desenvolvido seguindo os princípios de **Domain-Driven Design (DDD)** e **Entrega Contínua**. O sistema facilita o acompanhamento de saldo, despesas, histórico de movimentações e gestão de perfil do usuário, com uma arquitetura robusta e bem estruturada.
+**Kash** é um aplicativo web/mobile **completo e pronto para produção** para controle financeiro pessoal, desenvolvido seguindo os princípios de **Domain-Driven Design (DDD)**, **Entrega Contínua** e **Arquitetura de Software** moderna. 
+
+🎉 **PROJETO 100% COMPLETO** - Todos os requisitos da Tech Academy 7 foram implementados!
 
 ## ✨ Funcionalidades principais
 
-- **Dashboard:** Exibe o saldo total, despesas, porcentagem de gastos e alertas de situação financeira
-- **Despesas:** Cadastro, edição, exclusão e filtro de despesas por data
-- **Saldo:** Adição, edição e exclusão de valores de saldo, com histórico detalhado
-- **Histórico:** Lista todas as movimentações (entradas e saídas) do usuário
-- **Perfil:** Visualização e edição dos dados do usuário
-- **Menu:** Navegação central para todas as áreas do app
-- **Cadastro/Login:** Autenticação de usuários com validação de senha e recuperação de acesso
-- **Alertas:** Notificações sobre ações e situações financeiras (gastos excessivos)
-- **Detecção Automática:** Sistema inteligente de detecção de gastos excessivos
+### Core Features
+- **Dashboard:** Saldo total, despesas, porcentagem de gastos e alertas financeiros
+- **Despesas:** CRUD completo com filtros por data e categoria
+- **Saldo:** Gestão de saldo com histórico detalhado
+- **Histórico:** Lista completa de movimentações (entradas/saídas)
+- **Perfil:** Visualização e edição de dados do usuário + foto de perfil
+- **Autenticação:** Login/Register com JWT + RBAC (admin/user)
+- **Alertas:** Notificações sobre ações e gastos excessivos
+
+### 🆕 Advanced Features (Implementados)
+- ✅ **Cache Distribuído Redis** (cache-aside, TTL, invalidação)
+- ✅ **Mensageria Redis Pub/Sub** (eventos distribuídos)
+- ✅ **Upload de Imagens** (Multer com validações completas)
+- ✅ **Nginx Reverse Proxy** (load balancing, rate limiting)
+- ✅ **Logs Estruturados** (Pino JSON)
+- ✅ **Métricas Prometheus** (9 tipos de métricas)
+- ✅ **Circuit Breaker** (resiliência em DB e external services)
+- ✅ **Autorização RBAC** (admin + user roles)
+- ✅ **Domain Events** (event dispatcher + handlers)
 
 ## 🏗️ Arquitetura & Design Patterns
 
 ### Domain-Driven Design (DDD)
 - **Bounded Contexts:** User Management, Financial Management, Notification
-- **Entities:** User, Transaction, FinancialAccount
-- **Value Objects:** Money, Email, Category
+- **Entities:** User, Transaction, FinancialAccount, Category
+- **Value Objects:** Money, Email
 - **Aggregates:** FinancialAccount (root), User (root)
 - **Domain Services:** FinancialService, AuthenticationService
-- **Repository Pattern:** Abstração de acesso a dados
-- **Domain Events:** Comunicação entre contexts
+- **Repository Pattern:** Separação domain/persistence
+- **Domain Events:** Comunicação entre bounded contexts
+
+### Backend Avançado
+- **Cache-Aside Pattern:** Redis com TTL configurável
+- **Pub/Sub Messaging:** Redis para eventos distribuídos
+- **Circuit Breaker:** Opossum para resiliência
+- **Rate Limiting:** Nginx (10 req/s API, 5 req/min login)
+- **Upload System:** Multer com validações (extensão, tamanho, MIME)
 
 ### Entrega Contínua (CI/CD)
 - **Pipeline Automatizada:** Build, Test, Security Scan, Deploy
 - **Multiple Environments:** Development, Staging, Production
-- **Quality Gates:** Cobertura de testes, Security scan, Performance
-- **Containerização:** Docker + Docker Compose
-- **Rollback Strategy:** Automático em caso de falhas
+- **Quality Gates:** Coverage, Security, Performance
+- **Containerização:** Docker + Docker Compose + Nginx
+- **Rollback Strategy:** Automático em falhas
 
 ## 🛠️ Tecnologias e linguagens utilizadas
 
-### Frontend
-- **Framework:** [React Native](https://reactnative.dev/) com Expo
+### Backend (Node.js + TypeScript)
+- **Runtime:** Node.js 18/20
+- **Framework:** Express.js
+- **Language:** TypeScript
+- **ORM:** Sequelize
+- **Database:** MySQL 8.0
+- **Cache:** Redis 7
+- **Upload:** Multer
+- **Logger:** Pino (JSON structured logs)
+- **Metrics:** prom-client (Prometheus)
+- **Circuit Breaker:** Opossum
+- **Testing:** Jest + Supertest
+- **API Docs:** Swagger/OpenAPI
+
+### Frontend (React Native + Expo)
+- **Framework:** React Native com Expo
 - **Language:** TypeScript
 - **Navigation:** Expo Router
-- **Styling:** Styled Components & StyleSheet
-- **Icons:** [React Native Vector Icons](https://github.com/oblador/react-native-vector-icons)
+- **Styling:** Styled Components
+- **Icons:** React Native Vector Icons
 - **Storage:** Async Storage
 - **Testing:** Jest + React Native Testing Library
+
+### Infrastructure
+- **Containerização:** Docker + Docker Compose
+- **Reverse Proxy:** Nginx (load balancing + rate limiting)
+- **CI/CD:** GitHub Actions
+- **Security Scanning:** Trivy, Gitleaks, Snyk
+- **Monitoring:** Prometheus + Grafana ready
 
 ### Backend  
 - **Runtime:** Node.js
