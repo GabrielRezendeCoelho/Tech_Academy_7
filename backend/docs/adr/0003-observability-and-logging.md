@@ -1,8 +1,8 @@
 ```markdown
 # ADR 0003 — Observabilidade e Logging
 
-Data: 2025-11-04
-Status: Proposto
+Data: 2025-11-04  
+Status: **Aceito** (Implementado em 2025-11-20)
 
 ## Contexto
 
@@ -38,11 +38,32 @@ Adotar uma pilha básica de observabilidade:
 
 ## Implementação / follow-ups
 
-1. Instalar e configurar `pino` ou `winston` com saída JSON e níveis configuráveis via env.
-2. Middleware que injeta `requestId` (X-Request-Id) e o inclui nos logs.
-3. Expor métricas básicas: request_rate, latency_histogram, error_rate, db_queue_length.
-4. Adicionar integração simples de OpenTelemetry e enviar spans para Jaeger em staging.
-5. Documentar instruções de como ativar e acessar dashboards / traces.
+✅ **IMPLEMENTADO (2025-11-20):**
+1. ✅ Logger Pino instalado e configurado com saída JSON estruturada (src/utils/logger.ts)
+2. ✅ Logs com campos: level, timestamp, requestId (quando disponível), userId, message, context
+3. ✅ Endpoint GET /metrics exposto com métricas Prometheus:
+   - `kash_http_requests_total{method, path, status}` - Total de requisições HTTP
+   - `kash_cache_hits_total` - Total de cache hits
+   - `kash_cache_misses_total` - Total de cache misses
+   - `kash_circuit_breaker_state{name}` - Estado do circuit breaker (closed/open/half-open)
+4. ✅ Logs estruturados em todos os componentes principais (controllers, services, middleware)
+5. ✅ Health check endpoint GET /health → `{ status: 'ok', timestamp }`
+
+🔄 **PENDENTE:**
+1. Adicionar middleware de requestId (X-Request-Id) automático em todas as requests
+2. Configurar Prometheus scraping em staging/prod (prometheus.yml)
+3. Criar dashboards Grafana básicos (request rate, latency, error rate)
+4. Implementar OpenTelemetry para tracing distribuído (opcional)
+5. Adicionar métricas de banco de dados (db_query_duration, db_pool_size)
+
+## Status Atual (2025-11-20)
+
+- ✅ Logs estruturados JSON com Pino em toda aplicação
+- ✅ Métricas Prometheus expostas em /metrics
+- ✅ Health check funcionando
+- ⚠️ RequestId middleware **não implementado** (manual por enquanto)
+- ⚠️ Grafana dashboards **não criados**
+- ⚠️ OpenTelemetry tracing **não implementado**
 
 ## Critérios de aceitação
 

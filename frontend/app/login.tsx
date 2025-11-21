@@ -4,7 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_BASE } from '../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY } from '../utils/storage';
+import { USER_NAME_KEY, USER_EMAIL_KEY, USER_TOKEN_KEY, USER_ROLE_KEY } from '../utils/storage';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -38,6 +38,12 @@ export default function LoginScreen() {
       await AsyncStorage.setItem(USER_NAME_KEY, data.user.name);
       await AsyncStorage.setItem(USER_EMAIL_KEY, data.user.email);
       await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
+      
+      // Salvar role do usuário
+      if (data.user.role) {
+        await AsyncStorage.setItem(USER_ROLE_KEY, data.user.role);
+      }
+      
       setSuccessMsg('Login realizado com sucesso! Redirecionando...');
       setTimeout(() => router.replace('/dashboard'), 600);
     } catch (e: any) {

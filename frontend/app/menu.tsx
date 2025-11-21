@@ -1,10 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { storageGet, USER_TOKEN_KEY } from "../utils/storage";
 
 export default function MenuScreen() {
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const token = await storageGet(USER_TOKEN_KEY);
+      if (token) {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setIsAdmin(payload.role === "admin");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar role:", error);
+    }
+  };
 
   const handleSair = () => {
     Alert.alert("Sair", "Você saiu do aplicativo.");
@@ -77,6 +95,25 @@ export default function MenuScreen() {
         />
         <Text style={styles.itemText}>Movimentações</Text>
       </TouchableOpacity>
+
+      {/* Botão Admin - Apenas visível para administradores */}
+      {isAdmin && (
+        <TouchableOpacity
+          style={[styles.item, styles.adminItem]}
+          onPress={() => router.push("/gerenciar-usuarios")}
+        >
+          <MaterialIcons
+            name="admin-panel-settings"
+            size={28}
+            color="#dc2626"
+            style={styles.icon}
+          />
+          <Text style={[styles.itemText, { color: "#dc2626" }]}>
+            👑 Gerenciar Usuários
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={[styles.item, styles.sair]} onPress={handleSair}>
         <MaterialIcons
           name="logout"
@@ -112,6 +149,11 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 16,
     width: "85%",
+  },
+  adminItem: {
+    backgroundColor: "#fef2f2",
+    borderWidth: 2,
+    borderColor: "#dc2626",
   },
   icon: { marginRight: 16 },
   itemText: { fontSize: 20, fontWeight: "600", color: "#222" },

@@ -7,6 +7,7 @@ class User extends Model {
   public email!: string;
   public password!: string;
   public cpf!: string;
+  public role!: 'user' | 'admin';
 }
 
 User.init({
@@ -33,6 +34,11 @@ User.init({
     type: DataTypes.STRING(11),
     allowNull: false,
     unique: true,
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin'),
+    allowNull: false,
+    defaultValue: 'user',
   },
 }, {
   sequelize,

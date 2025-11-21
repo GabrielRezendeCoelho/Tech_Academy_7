@@ -12,6 +12,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
+    "create-admin": "ts-node src/scripts/createAdminUser.ts",
     "kill-port": "powershell -Command \"$p = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select -First 1 -ExpandProperty OwningProcess; if ($p) { Stop-Process -Id $p -Force; Write-Output 'Port 3000 liberada (PID:' $p ')'; } else { Write-Output 'Porta 3000 já está livre.' }\"",
     "restart-clean": "npm run kill-port && npm run dev"
   },

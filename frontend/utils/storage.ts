@@ -71,3 +71,4 @@ export async function storageMultiGet(keys: string[]): Promise<Record<string, st
 export const USER_NAME_KEY = 'userName';
 export const USER_EMAIL_KEY = 'userEmail';
 export const USER_TOKEN_KEY = 'userToken';
+export const USER_ROLE_KEY = 'userRole';

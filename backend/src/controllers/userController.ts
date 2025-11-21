@@ -129,27 +129,43 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Senha inválida.' });
     }
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'secreta',
       { expiresIn: '1h' }
     );
     console.log('[LOGIN] Sucesso para usuário id', user.id);
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, cpf: user.cpf } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        cpf: user.cpf, 
+        role: user.role 
+      } 
+    });
   } catch (err) {
     console.error('[LOGIN] Erro inesperado', err);
     res.status(500).json({ error: 'Erro ao fazer login', details: err });
   }
 };
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email, password, cpf } = req.body;
+  const { name, email, password, cpf, role } = req.body;
   if (!name || !email || !password || !cpf) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, cpf });
+    // Role padrão é 'user', mas pode ser 'admin' se passado no body
+    const user = await User.create({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      cpf,
+      role: role || 'user' // Default 'user'
+    });
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'secreta',
       { expiresIn: '1h' }
     );
@@ -185,14 +201,100 @@ export const getUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, email, password, cpf } = req.body;
+  const { name, email, password, cpf, role } = req.body;
   try {
     const user = await User.findByPk(Number(id));
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
-    await user.update({ name, email, password, cpf });
+    
+    const updateData: any = { name, email, cpf };
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+    if (role) {
+      updateData.role = role;
+    }
+    
+    await user.update(updateData);
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao atualizar usuário', details: err });
+  }
+};
+
+// Admin: Criar usuário admin
+export const createAdmin = async (req: Request, res: Response) => {
+  const { name, email, password, cpf } = req.body;
+  if (!name || !email || !password || !cpf) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      cpf,
+      role: 'admin' // Força role admin
+    });
+    res.status(201).json({ 
+      message: 'Admin criado com sucesso',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err: any) {
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      const fields = err.errors.map((e: any) => e.path).join(' e ');
+      return res.status(400).json({ error: `Já existe um usuário com este ${fields}.` });
+    }
+    res.status(500).json({ error: 'Erro ao criar admin', details: err });
+  }
+};
+
+// Admin: Promover usuário a admin
+export const promoteToAdmin = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findByPk(Number(id));
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    
+    await user.update({ role: 'admin' });
+    res.json({ 
+      message: 'Usuário promovido a admin com sucesso',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao promover usuário', details: err });
+  }
+};
+
+// Admin: Rebaixar admin para usuário comum
+export const demoteFromAdmin = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findByPk(Number(id));
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    
+    await user.update({ role: 'user' });
+    res.json({ 
+      message: 'Admin rebaixado para usuário comum',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao rebaixar admin', details: err });
   }
 };
 

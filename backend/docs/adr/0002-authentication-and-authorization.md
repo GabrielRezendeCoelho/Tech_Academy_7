@@ -1,8 +1,8 @@
 ```markdown
 # ADR 0002 — Autenticação e Autorização
 
-Data: 2025-11-04
-Status: Proposto
+Data: 2025-11-04  
+Status: **Aceito** (Implementado em 2025-11-20)
 
 ## Contexto
 
@@ -37,11 +37,28 @@ Adotar autenticação baseada em JWT (JSON Web Tokens) com tokens de acesso de c
 
 ## Implementação / follow-ups
 
-1. Endpoint POST /auth/login -> retorna { accessToken, refreshToken }
-2. Middleware de autenticação que valida JWT no header Authorization: Bearer <token>
-3. Middleware de autorização por roles e verificação de ownership (ex.: middleware ensureOwner)
-4. Store de refresh tokens (posição segura) e política de rotação. Pode usar Redis para tokens revogados.
-5. Regras de segurança: algoritmo de assinatura robusto (RS256 preferível a HS256 para ambientes distribuídos), expirações configuráveis (access: 10-60 minutos; refresh: 7-30 dias)
+✅ **IMPLEMENTADO (2025-11-20):**
+1. ✅ Endpoint POST /users/login -> retorna { accessToken (JWT), user }
+2. ✅ Middleware de autenticação implementado (valida JWT em Authorization: Bearer <token>)
+3. ✅ User model com campos: id, name, email, password (bcrypt hash), cpf, role (enum: 'user', 'admin')
+4. ✅ JWT configurado com algoritmo HS256, expiração de 1h, secret em .env (JWT_SECRET)
+5. ✅ Endpoint POST /users para registro com hash bcrypt (rounds=10)
+
+🔄 **PENDENTE:**
+1. Implementar middleware de autorização por roles (requireRole('admin'))
+2. Implementar refresh tokens com rotação segura
+3. Store de refresh tokens no Redis para revogação
+4. Adicionar endpoint POST /auth/logout para blacklist de tokens
+5. Migrar HS256 para RS256 (public/private keys) para ambiente distribuído
+
+## Status Atual (2025-11-20)
+
+- ✅ Autenticação JWT funcionando (login, registro, validação de token)
+- ✅ Hash de senhas com bcrypt implementado
+- ✅ Campo `role` adicionado ao User model (padrão: 'user')
+- ⚠️ Autorização por roles **não implementada** (middleware requireRole falta)
+- ⚠️ Refresh tokens **não implementados**
+- ⚠️ Logout/revogação de tokens **não implementado**
 
 ## Referências
 - RFC7519 - JSON Web Token
