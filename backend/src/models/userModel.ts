@@ -8,6 +8,7 @@ class User extends Model {
   public password!: string;
   public cpf!: string;
   public role!: 'user' | 'admin';
+  public photoUrl!: string | null;
 }
 
 User.init({
@@ -40,11 +41,24 @@ User.init({
     allowNull: false,
     defaultValue: 'user',
   },
+  photoUrl: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    defaultValue: null,
+  },
 }, {
   sequelize,
   modelName: 'User',
   tableName: 'users',
   timestamps: false,
+  defaultScope: {
+    attributes: { exclude: ['password'] }
+  },
+  scopes: {
+    withPassword: {
+      attributes: { include: ['password'] }
+    }
+  }
 });
 
 export default User;

@@ -1,0 +1,47 @@
+# docker-compose-dev.yml - Apenas MySQL e Redis para desenvolvimento
+version: '3.8'
+
+services:
+  mysql:
+    container_name: kash-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: kash_db
+      MYSQL_USER: kash_user
+      MYSQL_PASSWORD: kash_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kash-network
+
+  redis:
+    container_name: kash-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kash-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  kash-network:
+    driver: bridge

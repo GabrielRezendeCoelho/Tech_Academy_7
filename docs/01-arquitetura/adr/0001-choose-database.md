@@ -15,13 +15,13 @@ Usar MySQL (compatível com MariaDB) como banco de dados relacional primário em
 presente no projeto) com o driver `mysql2`.
 
 ## Justificativa
-
+# # # #
 - Alinhamento com o código atual: o projeto já depende de `mysql2` e Sequelize foi utilizado nos models; isso reduz trabalho e acelera entrega.
 - Modelo de dados relacional: entidades possuem relacionamentos e constraints — um RDBMS é a escolha natural.
 - Maturidade e ecossistema: MySQL/MariaDB são amplamente suportados em provedores gerenciados (RDS/Cloud SQL) com boas ferramentas de backup e replicação.
 - Operação e custo: imagens Docker, tutoriais e expertise são abundantes; curva operacional moderada para cargas pequenas/médias.
 - ACID e integridade: atende requisitos transacionais do domínio financeiro (saldos, lançamentos).
-
+# # # #
 ## Alternativas consideradas
 
 1. PostgreSQL

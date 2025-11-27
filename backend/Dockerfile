@@ -1,40 +1,30 @@
 # Backend Dockerfile
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY package.json package-lock.json* ./
+# Install ALL dependencies (including dev dependencies for TypeScript build)
 RUN npm ci
 
+# Copy source code
 COPY . .
+
+# Build TypeScript - This will create dist/src/server.js based on tsconfig
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 kash
-
-COPY --from=deps --chown=kash:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=kash:nodejs /app/dist ./dist
-COPY --from=builder --chown=kash:nodejs /app/package.json ./package.json
-
-USER kash
+# Create uploads directory
+RUN mkdir -p uploads/profiles
 
 EXPOSE 3000
 
 ENV PORT=3000
+ENV NODE_ENV=production
 
+# Use npm start which is configured as "node dist/server.js" in package.json
 CMD ["npm", "start"]

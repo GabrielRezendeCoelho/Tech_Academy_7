@@ -40,7 +40,7 @@ app.use("/categorias", categoriaRoutes);
 app.use("/saldos", saldoRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// Serve arquivos estáticos de uploads (para acesso via URL)
+// Serve arquivos estáticos de uploads (para acesso às fotos de perfil via URL)
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Serve OpenAPI/Swagger UI at /docs

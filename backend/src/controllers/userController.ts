@@ -2,6 +2,9 @@ import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import User from '../models/userModel';
 import jwt from 'jsonwebtoken';
+import { deleteOldPhoto } from '../middleware/uploadMiddleware';
+import path from 'path';
+
 
 // Deletar usuário autenticado, exigindo senha
 export const deleteUserByToken = async (req: any, res: any) => {
@@ -18,7 +21,7 @@ export const deleteUserByToken = async (req: any, res: any) => {
     const userId = decoded.id;
     const { senha } = req.body;
     if (!senha) return res.status(400).json({ error: 'Senha obrigatória' });
-    const user = await User.findByPk(userId);
+    const user = await User.scope('withPassword').findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     const senhaCorreta = await bcrypt.compare(senha, user.password);
     if (!senhaCorreta) return res.status(401).json({ error: 'Senha incorreta' });
@@ -38,7 +41,7 @@ export const updatePasswordByToken = async (req: Request, res: Response) => {
     const userId = decoded.id;
     const { senhaAtual, novaSenha } = req.body;
     if (!senhaAtual || !novaSenha) return res.status(400).json({ error: 'Preencha todos os campos' });
-    const user = await User.findByPk(userId);
+    const user = await User.scope('withPassword').findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     const valid = await bcrypt.compare(senhaAtual, user.password);
     if (!valid) return res.status(401).json({ error: 'Senha atual incorreta' });
@@ -59,7 +62,7 @@ export const updateEmailByToken = async (req: Request, res: Response) => {
     const userId = decoded.id;
     const { email, senhaAtual } = req.body;
     if (!email || !senhaAtual) return res.status(400).json({ error: 'Email e senha atual são obrigatórios' });
-    const user = await User.findByPk(userId);
+    const user = await User.scope('withPassword').findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     const valid = await bcrypt.compare(senhaAtual, user.password);
     if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
@@ -118,7 +121,7 @@ export const loginUser = async (req: Request, res: Response) => {
   }
   try {
     console.log('[LOGIN] Tentativa de login para email:', email);
-    const user = await User.findOne({ where: { email } });
+    const user = await User.scope('withPassword').findOne({ where: { email } });
     if (!user) {
       console.log('[LOGIN] Usuário não encontrado:', email);
       return res.status(401).json({ error: 'Usuário não encontrado.' });
@@ -313,7 +316,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   const { email, novaSenha } = req.body;
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.scope('withPassword').findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado.' });
     }
@@ -323,5 +326,132 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.json({ message: 'Senha redefinida com sucesso!' });
   } catch (error) {
     return res.status(500).json({ error: 'Erro ao redefinir senha.' });
+  }
+};
+
+// Obter dados do usuário autenticado
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      cpf: user.cpf,
+      role: user.role,
+      photoUrl: user.photoUrl
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar dados do usuário', details: error });
+  }
+};
+
+
+// Upload de foto de perfil
+export const uploadProfilePhoto = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
+    }
+
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Deletar foto antiga se existir
+    if (user.photoUrl) {
+      await deleteOldPhoto(user.photoUrl);
+    }
+
+    // Salvar URL da nova foto
+    const photoUrl = `/uploads/profiles/${req.file.filename}`;
+    await user.update({ photoUrl });
+
+    console.log(`✅ Foto de perfil atualizada para usuário ${userId}`);
+    
+    res.json({ 
+      message: 'Foto de perfil atualizada com sucesso',
+      photoUrl: photoUrl,
+      fileInfo: {
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao fazer upload da foto:', error);
+    res.status(500).json({ error: 'Erro ao fazer upload da foto', details: error });
+  }
+};
+
+// Deletar foto de perfil
+export const deleteProfilePhoto = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    if (!user.photoUrl) {
+      return res.status(400).json({ error: 'Usuário não possui foto de perfil' });
+    }
+
+    // Deletar foto
+    await deleteOldPhoto(user.photoUrl);
+    await user.update({ photoUrl: null });
+
+    console.log(`✅ Foto de perfil deletada para usuário ${userId}`);
+    
+    res.json({ message: 'Foto de perfil deletada com sucesso' });
+  } catch (error) {
+    console.error('❌ Erro ao deletar foto:', error);
+    res.status(500).json({ error: 'Erro ao deletar foto de perfil', details: error });
+  }
+};
+
+// Admin: Ver foto de qualquer usuário
+export const getUserPhoto = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(Number(id));
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    if (!user.photoUrl) {
+      return res.status(404).json({ error: 'Usuário não possui foto de perfil' });
+    }
+
+    res.json({ 
+      photoUrl: user.photoUrl,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar foto do usuário', details: error });
   }
 };

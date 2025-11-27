@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -23,6 +24,8 @@ import {
 } from "../utils/storage";
 import BackButton from "./components/BackButton";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as ImagePicker from 'expo-image-picker';
+import { launchImageLibraryWithValidation, launchCameraWithValidation } from './ImagePickerWrapper';
 
 export default function PerfilScreen() {
   const alert = useAppAlert();
@@ -30,14 +33,229 @@ export default function PerfilScreen() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   useEffect(() => {
     (async () => {
       const name = await AsyncStorage.getItem(USER_NAME_KEY);
       const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
       if (name) setNome(name);
       if (email) setEmail(email);
+      await loadUserProfile();
     })();
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.photoUrl) {
+          setPhotoUrl(`${API_BASE}${data.photoUrl}`);
+        }
+      }
+    } catch (error) {
+      // Falha silenciosa - não quebrar a aplicação
+      console.log('Erro ao carregar perfil:', error);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      setModalPhotoOptions(false);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert.show('Permissão necessária para acessar a galeria');
+        return;
+      }
+
+      const result = await launchImageLibraryWithValidation();
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        
+        // Validar se é realmente uma imagem
+        if (!asset.uri) {
+          alert.show('Arquivo inválido. Selecione uma imagem.');
+          return;
+        }
+        
+        await uploadPhoto(asset.uri);
+      }
+    } catch (error: any) {
+      console.error('Erro ao selecionar imagem:', error);
+      if (error?.message?.includes('Unsupported file type')) {
+        alert.show('Tipo de arquivo não suportado. Selecione apenas imagens.');
+      } else {
+        alert.show('Erro ao selecionar imagem. Tente novamente.');
+      }
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      setModalPhotoOptions(false);
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert.show('Permissão necessária para acessar a câmera');
+        return;
+      }
+
+      const result = await launchCameraWithValidation();
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        
+        if (!asset.uri) {
+          alert.show('Erro ao capturar foto. Tente novamente.');
+          return;
+        }
+        
+        await uploadPhoto(asset.uri);
+      }
+    } catch (error: any) {
+      console.error('Erro ao tirar foto:', error);
+      if (error?.message?.includes('Unsupported file type')) {
+        alert.show('Erro com o formato da foto. Tente novamente.');
+      } else {
+        alert.show('Erro ao tirar foto. Tente novamente.');
+      }
+    }
+  };
+
+  const uploadPhoto = async (uri: string) => {
+    setUploading(true);
+    try {
+      // Validação básica da URI
+      if (!uri || uri.trim() === '') {
+        alert.show('Arquivo inválido');
+        setUploading(false);
+        return;
+      }
+
+      const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
+      if (!token) {
+        alert.show('Você precisa estar logado para enviar fotos');
+        setUploading(false);
+        return;
+      }
+
+      const filename = uri.split('/').pop() || 'photo.jpg';
+      const match = /\.([\w]+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      const formData = new FormData();
+      
+      // Para React Native Web, precisamos criar um blob a partir da URI
+      if (uri.startsWith('blob:') || uri.startsWith('http')) {
+        try {
+          // URI já é um blob ou URL - usar fetch para obter o blob
+          const response = await fetch(uri);
+          
+          if (!response.ok) {
+            throw new Error('Não foi possível carregar a imagem');
+          }
+          
+          const blob = await response.blob();
+          
+          // Validar se é realmente uma imagem
+          if (!blob.type.startsWith('image/')) {
+            alert.show('Selecione apenas arquivos de imagem');
+            setUploading(false);
+            return;
+          }
+          
+          formData.append('photo', blob, 'photo.jpg');
+        } catch (blobError) {
+          console.error('Erro ao processar imagem:', blobError);
+          alert.show('Erro ao processar imagem. Tente outro arquivo.');
+          setUploading(false);
+          return;
+        }
+      } else {
+        // React Native nativo - formato padrão
+        formData.append('photo', {
+          uri,
+          name: filename,
+          type,
+        } as any);
+      }
+
+      const res = await fetch(`${API_BASE}/users/photo`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // NÃO definir Content-Type - deixar o browser/fetch definir automaticamente com boundary
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorMsg = data.error || 'Erro ao fazer upload da foto';
+        alert.show(errorMsg);
+        return;
+      }
+
+      setPhotoUrl(`${API_BASE}${data.photoUrl}`);
+      alert.show('Foto atualizada com sucesso!');
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      const errorMsg = error?.message || 'Erro ao fazer upload. Verifique sua conexão.';
+      alert.show(errorMsg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deletePhoto = async () => {
+    setModalPhotoOptions(false);
+    try {
+      const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
+      if (!token) {
+        alert.show('Você precisa estar logado');
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/users/photo`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setPhotoUrl(null);
+        alert.show('Foto removida com sucesso!');
+      } else {
+        const data = await res.json();
+        alert.show(data.error || 'Erro ao remover foto');
+      }
+    } catch (error) {
+      console.error('Erro ao deletar foto:', error);
+      alert.show('Erro ao remover foto. Tente novamente.');
+    }
+  };
+
+  const showPhotoOptions = () => {
+    try {
+      setModalPhotoOptions(true);
+    } catch (error) {
+      console.error('Erro ao abrir opções:', error);
+      alert.show('Erro ao abrir menu. Tente novamente.');
+    }
+  };
   const [modalVisible, setModalVisible] = useState(false);
   const [modalEmailVisible, setModalEmailVisible] = useState(false);
   const [senhaEmail, setSenhaEmail] = useState("");
@@ -52,6 +270,7 @@ export default function PerfilScreen() {
   const [modalDeleteVisible, setModalDeleteVisible] = useState(false);
   const [senhaDelete, setSenhaDelete] = useState("");
   const [erroDelete, setErroDelete] = useState("");
+  const [modalPhotoOptions, setModalPhotoOptions] = useState(false);
 
   const handleDeletarUsuario = async () => {
     setErroDelete("");
@@ -212,12 +431,26 @@ export default function PerfilScreen() {
       <BackButton to="/menu" />
       <Text style={styles.title}>Perfil</Text>
 
-      {/* Card de header no padrão do dashboard */}
+      {/* Card de header com foto de perfil */}
       <View style={styles.headerCard}>
-        <View style={styles.iconCircle}>
-          <MaterialIcons name="account-circle" size={48} color="#fff" />
-        </View>
+        <TouchableOpacity onPress={showPhotoOptions} style={styles.photoContainer}>
+          {uploading ? (
+            <View style={styles.iconCircle}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          ) : photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
+          ) : (
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="account-circle" size={48} color="#fff" />
+            </View>
+          )}
+          <View style={styles.cameraIcon}>
+            <MaterialIcons name="camera-alt" size={20} color="#fff" />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.headerLabel}>Dados do usuário</Text>
+        <Text style={styles.photoHint}>Toque na foto para alterar</Text>
       </View>
 
       <View style={styles.infoBoxUser}>
@@ -464,6 +697,52 @@ export default function PerfilScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de opções de foto */}
+      <Modal visible={modalPhotoOptions} transparent animationType="fade">
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Foto de perfil</Text>
+            <Text style={{ color: '#6b7280', marginBottom: 16, textAlign: 'center' }}>
+              Escolha uma opção
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.photoOptionBtn, { backgroundColor: '#22c55e' }]}
+              onPress={takePhoto}
+            >
+              <MaterialIcons name="camera-alt" size={24} color="#fff" />
+              <Text style={styles.photoOptionText}>Tirar foto</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.photoOptionBtn, { backgroundColor: '#3b82f6' }]}
+              onPress={pickImage}
+            >
+              <MaterialIcons name="photo-library" size={24} color="#fff" />
+              <Text style={styles.photoOptionText}>Escolher da galeria</Text>
+            </TouchableOpacity>
+
+            {photoUrl && (
+              <TouchableOpacity
+                style={[styles.photoOptionBtn, { backgroundColor: '#ef4444' }]}
+                onPress={deletePhoto}
+              >
+                <MaterialIcons name="delete" size={24} color="#fff" />
+                <Text style={styles.photoOptionText}>Remover foto</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.photoOptionBtn, { backgroundColor: '#6b7280' }]}
+              onPress={() => setModalPhotoOptions(false)}
+            >
+              <MaterialIcons name="close" size={24} color="#fff" />
+              <Text style={styles.photoOptionText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -547,7 +826,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
   },
-  headerLabel: { fontSize: 16, color: "#374151" },
+  photoContainer: {
+    position: 'relative',
+    marginBottom: 10,
+  },
+  profilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#22c55e',
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#22c55e',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  headerLabel: { fontSize: 16, color: "#374151", fontWeight: '600' },
+  photoHint: { fontSize: 12, color: "#6b7280", marginTop: 4 },
 
   sectionTitle: {
     fontSize: 20,
@@ -598,5 +902,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     alignItems: "center",
+  },
+  photoOptionBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  photoOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 12,
   },
 });

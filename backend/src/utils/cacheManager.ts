@@ -1,19 +1,3 @@
-/**
- * Cache Manager - Cache-Aside Pattern with Redis
- * 
- * Implementa cache distribuído com:
- * - Cache-Aside Pattern (lazy loading)
- * - TTL configurável
- * - Invalidação manual e automática
- * - Namespace para evitar colisões
- * - Serialização automática JSON
- * 
- * Uso:
- * const cached = await cacheManager.get('user:123');
- * await cacheManager.set('user:123', userData, 300); // TTL 5 min
- * await cacheManager.invalidate('user:123');
- * await cacheManager.invalidatePattern('user:*');
- */
 
 import { createClient, RedisClientType } from 'redis';
 import { logger } from './logger';
